@@ -1,0 +1,13 @@
+export const environment = {
+  production: false,
+  firebase: {
+    apiKey: "AIzaSyCdndKuPhePMvLBBMefVNP6rNfGqXZ1SZw",
+    authDomain: "subtrackr-b11eb.firebaseapp.com",
+    projectId: "subtrackr-b11eb",
+    storageBucket: "subtrackr-b11eb.firebasestorage.app",
+    messagingSenderId: "463708311691",
+    appId: "1:463708311691:web:8b720f4badda4a45b3848e",
+    measurementId: "G-LNXD7MC6G3"
+  },
+  recaptchaSiteKey: "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+};
