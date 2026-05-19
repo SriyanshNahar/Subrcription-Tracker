@@ -291,11 +291,11 @@ export class PricingComponent implements OnInit {
 
       // Step 2: Open Razorpay checkout modal
       const options = {
-        key: 'rzp_test_dummyKeyId', // Replace with your real Razorpay ID if preferred
+        key: response.keyId || 'rzp_test_dummyKeyId', // Dynamically loaded from backend
         subscription_id: response.subscriptionId,
         name: 'SubTrackr',
         description: `Upgrade to SubTrackr ${plan.toUpperCase()} Plan (${this.selectedBilling})`,
-        image: 'https://logo.clearbit.com/netflix.com', // placeholder
+        image: '/favicon.png', // Premium custom favicon!
         prefill: { email },
         theme: { color: '#6C63FF' },
         handler: async (paymentResponse: any) => {

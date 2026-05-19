@@ -489,7 +489,8 @@ app.post('/api/payment/subscribe', authenticate, async (req, res) => {
     res.json({
       success: true,
       subscriptionId: subscription.id,
-      shortUrl: subscription.short_url
+      shortUrl: subscription.short_url,
+      keyId: process.env.RAZORPAY_KEY_ID || 'dummy'
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
