@@ -50,6 +50,10 @@ try {
       return `"${cleaned}"`;
     });
 
+    // Self-healing JSON: Detect and escape any invalid/lone backslashes (e.g. not followed by standard escapes)
+    // to prevent JSON.parse from throwing "Bad escaped character" errors.
+    keyRaw = keyRaw.replace(/\\(?!["\\\/bfnrtu])/g, '\\\\');
+
     const serviceAccount = JSON.parse(keyRaw);
     
     admin.initializeApp({
