@@ -66,7 +66,7 @@ import { Router, RouterModule } from '@angular/router';
           <div *ngFor="let sub of subscriptions" class="p-6 flex items-center justify-between hover:bg-white/5 transition-colors">
             <div class="flex items-center space-x-4">
               <div class="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center text-xl overflow-hidden">
-                <img *ngIf="sub.logo" [src]="sub.logo" alt="logo" class="w-full h-full object-cover">
+                <img *ngIf="sub.logo" [src]="getLogoUrl(sub)" (error)="sub.logo = null" alt="logo" class="w-full h-full object-cover">
                 <span *ngIf="!sub.logo">{{ sub.name.charAt(0) }}</span>
               </div>
               <div>
@@ -218,6 +218,16 @@ export class DashboardComponent implements OnInit {
   subForm: FormGroup;
   activeUserPlan = 'free';
 
+  getLogoUrl(sub: any): string {
+    if (!sub.logo) return '';
+    if (sub.logo.includes('clearbit.com')) {
+      const parts = sub.logo.split('/');
+      const domain = parts[parts.length - 1];
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+    }
+    return sub.logo;
+  }
+
   // Cancel Assistant Properties
   showCancelModal = false;
   selectedSubForCancel: any = null;
@@ -285,7 +295,7 @@ export class DashboardComponent implements OnInit {
       if (data.billingCycle === 'Weekly') d.setDate(d.getDate() + 7);
       data.renewalDate = d.toISOString();
       const sanitizedName = data.name.toLowerCase().trim().replace(/\s+/g, '');
-      data.logo = `https://logo.clearbit.com/${sanitizedName}.com`;
+      data.logo = `https://www.google.com/s2/favicons?domain=${sanitizedName}.com&sz=128`;
 
       this.subService.addSubscription(data).subscribe({
         next: () => {
