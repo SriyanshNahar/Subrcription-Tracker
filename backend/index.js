@@ -30,18 +30,33 @@ let dbType = 'memory';
 
 try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+    let keyRaw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY.trim();
+    
+    // Strip external surrounding quotes if added by environment variable parsers
+    if (keyRaw.startsWith('"') && keyRaw.endsWith('"')) {
+      keyRaw = keyRaw.slice(1, -1);
+    }
+    if (keyRaw.startsWith("'") && keyRaw.endsWith("'")) {
+      keyRaw = keyRaw.slice(1, -1);
+    }
+    
+    // Convert escaped double backslashes back to actual newlines (very common issue in env strings)
+    keyRaw = keyRaw.replace(/\\n/g, '\n');
+
+    const serviceAccount = JSON.parse(keyRaw);
+    
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
     db = admin.firestore();
     dbType = 'firestore';
-    console.log('Firebase initialized. Using Firestore.');
+    console.log('🚀 SUCCESS: Firebase Admin Initialized. Using Google Firestore (Data is Persistent!).');
   } else {
-    throw new Error('No FIREBASE_SERVICE_ACCOUNT_KEY provided.');
+    throw new Error('No FIREBASE_SERVICE_ACCOUNT_KEY provided in environment variables.');
   }
 } catch (error) {
-  console.log('Falling back to in-memory database:', error.message);
+  console.error('⚠️ DATABASE FALLBACK: Falling back to in-memory database due to error:', error.message);
+  console.log('💡 TIP: If this is production (Render), verify that FIREBASE_SERVICE_ACCOUNT_KEY is valid JSON.');
   dbType = 'memory';
 }
 
