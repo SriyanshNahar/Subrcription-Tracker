@@ -629,7 +629,7 @@ const frontendPath = path.join(__dirname, '../frontend/dist/frontend/browser');
 app.use(express.static(frontendPath));
 
 // Fallback all client-side routes to Angular index.html (SPA routing)
-app.get('*', (req, res, next) => {
+app.get('/*splat', (req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return next();
   }
