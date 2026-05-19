@@ -1,0 +1,15 @@
+{
+  "name": "subtrackr-monorepo",
+  "version": "1.0.0",
+  "description": "Unified Subscription Tracker Workspace",
+  "scripts": {
+    "install:backend": "npm install --prefix backend",
+    "install:frontend": "npm install --prefix frontend",
+    "build:frontend": "npm run build --prefix frontend",
+    "build": "npm run install:backend && npm run install:frontend && npm run build:frontend",
+    "start": "node backend/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

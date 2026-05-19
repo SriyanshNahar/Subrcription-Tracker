@@ -623,5 +623,18 @@ cron.schedule('0 9 * * *', () => {
   // Logic to send emails via SendGrid
 });
 
+// --- SERVE STATIC FRONTEND IN PRODUCTION ---
+const path = require('path');
+const frontendPath = path.join(__dirname, '../frontend/dist/frontend/browser');
+app.use(express.static(frontendPath));
+
+// Fallback all client-side routes to Angular index.html (SPA routing)
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

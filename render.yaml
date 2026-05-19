@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: subtrackr-fullstack
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm run start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FIREBASE_SERVICE_ACCOUNT_KEY
+        sync: false
+      - key: SENDGRID_API_KEY
+        value: dummy
+      - key: RAZORPAY_KEY_ID
+        value: dummy
+      - key: RAZORPAY_KEY_SECRET
+        value: dummy
+      - key: EXCHANGE_RATE_API_KEY
+        value: dummy
+      - key: RECAPTCHA_SECRET_KEY
+        value: dummy
