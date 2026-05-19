@@ -40,8 +40,15 @@ try {
       keyRaw = keyRaw.slice(1, -1);
     }
     
-    // Convert escaped double backslashes back to actual newlines (very common issue in env strings)
-    keyRaw = keyRaw.replace(/\\n/g, '\n');
+    // Safely escape actual raw literal control characters (newlines, carriage returns, tabs) 
+    // inside quoted string values, while preserving standard JSON structure.
+    keyRaw = keyRaw.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, p1) => {
+      const cleaned = p1
+        .replace(/\r/g, '')
+        .replace(/\n/g, '\\n')
+        .replace(/\t/g, '\\t');
+      return `"${cleaned}"`;
+    });
 
     const serviceAccount = JSON.parse(keyRaw);
     
