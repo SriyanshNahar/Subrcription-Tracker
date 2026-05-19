@@ -8,13 +8,14 @@ import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
   currentUser$: Observable<any>;
   userProfile$ = new BehaviorSubject<any>(null);
-  private apiUrl = 'http://localhost:5000/api';
+  private apiUrl = `${environment.apiUrl}/api`;
 
   constructor(private auth: Auth, private router: Router, private http: HttpClient) {
     this.currentUser$ = user(this.auth);

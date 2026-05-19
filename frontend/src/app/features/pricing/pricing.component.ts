@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastrService } from 'ngx-toastr';
+import { environment } from '../../../environments/environment';
 
 declare var Razorpay: any;
 
@@ -278,7 +279,7 @@ export class PricingComponent implements OnInit {
       this.toastr.info('Preparing secure checkout...');
       
       // Step 1: Create Razorpay subscription session on backend
-      const response: any = await this.http.post('http://localhost:5000/api/payment/subscribe', {
+      const response: any = await this.http.post(`${environment.apiUrl}/api/payment/subscribe`, {
         planKey
       }).toPromise();
 
@@ -303,7 +304,7 @@ export class PricingComponent implements OnInit {
             this.toastr.info('Verifying secure transaction signatures...');
             
             // Step 3: Verify & Activate plan on backend
-            await this.http.post('http://localhost:5000/api/payment/verify', {
+            await this.http.post(`${environment.apiUrl}/api/payment/verify`, {
               ...paymentResponse,
               plan: planKey
             }).toPromise();
