@@ -22,7 +22,7 @@ export class AuthService {
     
     // Reactively fetch user profile whenever authentication state changes
     this.currentUser$.subscribe(async (firebaseUser) => {
-      if (firebaseUser) {
+      if (firebaseUser && firebaseUser.emailVerified) {
         try {
           const token = await firebaseUser.getIdToken();
           localStorage.setItem('token', token);
@@ -145,7 +145,9 @@ export class AuthService {
       headers: { Authorization: `Bearer ${token}` }
     }).subscribe({
       next: (profile) => {
-        this.userProfile$.next(profile);
+        if (user.emailVerified) {
+          this.userProfile$.next(profile);
+        }
       },
       error: (err) => console.error('Failed to sync user with backend:', err)
     });

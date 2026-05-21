@@ -28,7 +28,7 @@ import { AuthService } from '../../../core/services/auth.service';
             </div>
 
             <!-- Logged-in User Links -->
-            <ng-container *ngIf="auth.currentUser$ | async as user; else guest">
+            <ng-container *ngIf="auth.userProfile$ | async as profile; else guest">
               <a routerLink="/" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: true}" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Dashboard</a>
               <a routerLink="/pricing" routerLinkActive="text-primary" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Pricing</a>
               
@@ -38,112 +38,110 @@ import { AuthService } from '../../../core/services/auth.service';
               </a>
 
               <!-- User Profile Dropdown Button and Menu -->
-              <ng-container *ngIf="auth.userProfile$ | async as profile">
-                <div class="relative inline-block text-left pl-4 border-l border-white/10">
-                  <button 
-                    (click)="toggleProfileDropdown($event)" 
-                    class="flex items-center space-x-3 text-left focus:outline-none hover:bg-white/5 px-3 py-1.5 rounded-xl border border-transparent hover:border-white/5 transition-all duration-200 active:scale-[0.98]">
-                    <!-- Avatar circle -->
-                    <div class="w-9 h-9 rounded-full bg-slate-600 flex items-center justify-center text-white font-black text-sm shadow-md border border-white/10">
-                      {{ getInitials(profile.name) }}
-                    </div>
-                    
-                    <!-- Display Name & Chevron -->
+              <div class="relative inline-block text-left pl-4 border-l border-white/10">
+                <button 
+                  (click)="toggleProfileDropdown($event)" 
+                  class="flex items-center space-x-3 text-left focus:outline-none hover:bg-white/5 px-3 py-1.5 rounded-xl border border-transparent hover:border-white/5 transition-all duration-200 active:scale-[0.98]">
+                  <!-- Avatar circle -->
+                  <div class="w-9 h-9 rounded-full bg-slate-600 flex items-center justify-center text-white font-black text-sm shadow-md border border-white/10">
+                    {{ getInitials(profile.name) }}
+                  </div>
+                  
+                  <!-- Display Name & Chevron -->
+                  <div class="flex flex-col text-left">
+                    <span class="text-white font-bold text-sm leading-tight max-w-[120px] truncate">{{ profile.name }}</span>
+                    <span class="text-gray-400 text-[10px] font-semibold uppercase tracking-wider capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : 'Free') }}</span>
+                  </div>
+                  
+                  <!-- Chevron icon -->
+                  <svg 
+                    [ngClass]="{'rotate-180': isProfileDropdownOpen}"
+                    class="w-4 h-4 text-gray-400 transition-transform duration-300" 
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                <!-- Sleek Glassmorphic Dropdown Box -->
+                <div 
+                  *ngIf="isProfileDropdownOpen" 
+                  class="absolute right-0 mt-3 w-64 rounded-2xl bg-card border border-white/10 shadow-2xl backdrop-blur-xl p-4.5 z-50 animate-slide-down text-white overflow-hidden">
+                  <!-- Ambient Glow decoration inside dropdown -->
+                  <div class="absolute -top-12 -left-12 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+                  <div class="absolute -bottom-12 -right-12 w-24 h-24 bg-accent/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                  <!-- User Header -->
+                  <div class="pb-3 border-b border-white/5 mb-3 relative z-10">
+                    <p class="text-[9px] uppercase font-black text-gray-400 tracking-widest">Signed In As</p>
+                    <h4 class="text-white font-black text-sm truncate mt-0.5" [title]="profile.name">{{ profile.name }}</h4>
+                    <p class="text-gray-400 text-xs truncate font-medium" [title]="profile.email">{{ profile.email }}</p>
+                  </div>
+
+                  <!-- Active Plan Info widget with Badge Button -->
+                  <div class="p-3 bg-white/5 border border-white/5 rounded-xl mb-3 flex items-center justify-between relative z-10">
                     <div class="flex flex-col text-left">
-                      <span class="text-white font-bold text-sm leading-tight max-w-[120px] truncate">{{ profile.name }}</span>
-                      <span class="text-gray-400 text-[10px] font-semibold uppercase tracking-wider capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : 'Free') }}</span>
+                      <span class="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Account Plan</span>
+                      <span 
+                        [ngClass]="{
+                          'text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent font-black': profile.plan === 'pro',
+                          'text-emerald-400 font-black': profile.plan === 'family',
+                          'text-gray-300 font-bold': profile.plan === 'free' || !profile.plan
+                        }"
+                        class="text-xs capitalize">
+                        {{ profile.plan === 'pro' ? 'Premium Pro' : (profile.plan === 'family' ? 'Shared Family' : 'Starter Free') }}
+                      </span>
                     </div>
                     
-                    <!-- Chevron icon -->
-                    <svg 
-                      [ngClass]="{'rotate-180': isProfileDropdownOpen}"
-                      class="w-4 h-4 text-gray-400 transition-transform duration-300" 
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-
-                  <!-- Sleek Glassmorphic Dropdown Box -->
-                  <div 
-                    *ngIf="isProfileDropdownOpen" 
-                    class="absolute right-0 mt-3 w-64 rounded-2xl bg-card border border-white/10 shadow-2xl backdrop-blur-xl p-4.5 z-50 animate-slide-down text-white overflow-hidden">
-                    <!-- Ambient Glow decoration inside dropdown -->
-                    <div class="absolute -top-12 -left-12 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
-                    <div class="absolute -bottom-12 -right-12 w-24 h-24 bg-accent/10 rounded-full blur-2xl pointer-events-none"></div>
-
-                    <!-- User Header -->
-                    <div class="pb-3 border-b border-white/5 mb-3 relative z-10">
-                      <p class="text-[9px] uppercase font-black text-gray-400 tracking-widest">Signed In As</p>
-                      <h4 class="text-white font-black text-sm truncate mt-0.5" [title]="profile.name">{{ profile.name }}</h4>
-                      <p class="text-gray-400 text-xs truncate font-medium" [title]="user.email">{{ user.email }}</p>
-                    </div>
-
-                    <!-- Active Plan Info widget with Badge Button -->
-                    <div class="p-3 bg-white/5 border border-white/5 rounded-xl mb-3 flex items-center justify-between relative z-10">
-                      <div class="flex flex-col text-left">
-                        <span class="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Account Plan</span>
-                        <span 
-                          [ngClass]="{
-                            'text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent font-black': profile.plan === 'pro',
-                            'text-emerald-400 font-black': profile.plan === 'family',
-                            'text-gray-300 font-bold': profile.plan === 'free' || !profile.plan
-                          }"
-                          class="text-xs capitalize">
-                          {{ profile.plan === 'pro' ? 'Premium Pro' : (profile.plan === 'family' ? 'Shared Family' : 'Starter Free') }}
-                        </span>
-                      </div>
-                      
-                      <!-- Badge Clickable Button -->
-                      <button 
-                        (click)="isProfileDropdownOpen = false; openPlanDetails($event)"
-                        [ngClass]="{
-                          'bg-slate-500/10 text-slate-400 border border-slate-500/30 hover:bg-slate-500/20': profile.plan === 'free' || !profile.plan,
-                          'bg-gradient-to-r from-primary to-accent text-white shadow shadow-primary/20 hover:opacity-90': profile.plan === 'pro',
-                          'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20': profile.plan === 'family'
-                        }"
-                        class="text-[9px] font-black px-2 py-0.5 rounded-md tracking-wider transition-all duration-300 transform active:scale-95 cursor-pointer">
-                        {{ profile.plan === 'pro' ? 'PRO' : (profile.plan === 'family' ? 'FAMILY' : 'FREE') }}
-                      </button>
-                    </div>
-
-                    <!-- Quick Navigation Links inside Dropdown -->
-                    <div class="space-y-1 relative z-10">
-                      <!-- Trigger Plan Details Modal -->
-                      <button 
-                        (click)="isProfileDropdownOpen = false; openPlanDetails($event)" 
-                        class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all text-xs font-semibold text-left">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                        <span>My Plan Benefits</span>
-                      </button>
-
-                      <!-- Upgrade Pricing Store -->
-                      <a 
-                        routerLink="/pricing" 
-                        (click)="isProfileDropdownOpen = false" 
-                        class="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all text-xs font-semibold">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                        </svg>
-                        <span>Upgrade Store</span>
-                      </a>
-                    </div>
-
-                    <div class="h-px bg-white/5 my-2 relative z-10"></div>
-
-                    <!-- Red Logout Button inside Dropdown -->
+                    <!-- Badge Clickable Button -->
                     <button 
-                      (click)="isProfileDropdownOpen = false; logout()" 
-                      class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-xs font-bold text-left relative z-10">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                      </svg>
-                      <span>Logout Account</span>
+                      (click)="isProfileDropdownOpen = false; openPlanDetails($event)"
+                      [ngClass]="{
+                        'bg-slate-500/10 text-slate-400 border border-slate-500/30 hover:bg-slate-500/20': profile.plan === 'free' || !profile.plan,
+                        'bg-gradient-to-r from-primary to-accent text-white shadow shadow-primary/20 hover:opacity-90': profile.plan === 'pro',
+                        'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20': profile.plan === 'family'
+                      }"
+                      class="text-[9px] font-black px-2 py-0.5 rounded-md tracking-wider transition-all duration-300 transform active:scale-95 cursor-pointer">
+                      {{ profile.plan === 'pro' ? 'PRO' : (profile.plan === 'family' ? 'FAMILY' : 'FREE') }}
                     </button>
                   </div>
+
+                  <!-- Quick Navigation Links inside Dropdown -->
+                  <div class="space-y-1 relative z-10">
+                    <!-- Trigger Plan Details Modal -->
+                    <button 
+                      (click)="isProfileDropdownOpen = false; openPlanDetails($event)" 
+                      class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all text-xs font-semibold text-left">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      <span>My Plan Benefits</span>
+                    </button>
+
+                    <!-- Upgrade Pricing Store -->
+                    <a 
+                      routerLink="/pricing" 
+                      (click)="isProfileDropdownOpen = false" 
+                      class="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all text-xs font-semibold">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                      </svg>
+                      <span>Upgrade Store</span>
+                    </a>
+                  </div>
+
+                  <div class="h-px bg-white/5 my-2 relative z-10"></div>
+
+                  <!-- Red Logout Button inside Dropdown -->
+                  <button 
+                    (click)="isProfileDropdownOpen = false; logout()" 
+                    class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-xs font-bold text-left relative z-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Logout Account</span>
+                  </button>
                 </div>
-              </ng-container>
+              </div>
             </ng-container>
 
             <!-- Guest User Links -->
@@ -185,34 +183,32 @@ import { AuthService } from '../../../core/services/auth.service';
         *ngIf="isMobileMenuOpen" 
         class="lg:hidden absolute top-16 left-0 w-full z-40 bg-card/95 backdrop-blur-xl border-b border-white/5 p-5 flex flex-col space-y-3.5 animate-slide-down">
         
-        <ng-container *ngIf="auth.currentUser$ | async as user; else guestMobile">
+        <ng-container *ngIf="auth.userProfile$ | async as profile; else guestMobile">
           <!-- Mobile Profile Widget Card -->
-          <ng-container *ngIf="auth.userProfile$ | async as profile">
-            <div class="flex items-center space-x-3 p-3 bg-white/5 rounded-2xl border border-white/5 mb-2">
-              <!-- Avatar circle -->
-              <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white font-black text-sm shadow-md border border-white/10">
-                {{ getInitials(profile.name) }}
-              </div>
-              
-              <!-- Two-line info block -->
-              <div class="flex flex-col text-left flex-grow">
-                <span class="text-white font-bold text-sm leading-tight">{{ profile.name }}</span>
-                <span class="text-gray-400 text-xs font-semibold capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : 'Free') }}</span>
-              </div>
-              
-              <!-- Mobile badge details button -->
-              <button 
-                (click)="isMobileMenuOpen = false; openPlanDetails($event)" 
-                [ngClass]="{
-                  'bg-slate-500/10 text-slate-400 border border-slate-500/30': profile.plan === 'free' || !profile.plan,
-                  'bg-gradient-to-r from-primary to-accent text-white shadow shadow-primary/20': profile.plan === 'pro',
-                  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30': profile.plan === 'family'
-                }"
-                class="text-[9px] font-black px-2 py-0.5 rounded-md tracking-wider cursor-pointer">
-                {{ profile.plan === 'pro' ? 'PRO' : (profile.plan === 'family' ? 'FAMILY' : 'FREE') }}
-              </button>
+          <div class="flex items-center space-x-3 p-3 bg-white/5 rounded-2xl border border-white/5 mb-2">
+            <!-- Avatar circle -->
+            <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white font-black text-sm shadow-md border border-white/10">
+              {{ getInitials(profile.name) }}
             </div>
-          </ng-container>
+            
+            <!-- Two-line info block -->
+            <div class="flex flex-col text-left flex-grow">
+              <span class="text-white font-bold text-sm leading-tight">{{ profile.name }}</span>
+              <span class="text-gray-400 text-xs font-semibold capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : 'Free') }}</span>
+            </div>
+            
+            <!-- Mobile badge details button -->
+            <button 
+              (click)="isMobileMenuOpen = false; openPlanDetails($event)" 
+              [ngClass]="{
+                'bg-slate-500/10 text-slate-400 border border-slate-500/30': profile.plan === 'free' || !profile.plan,
+                'bg-gradient-to-r from-primary to-accent text-white shadow shadow-primary/20': profile.plan === 'pro',
+                'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30': profile.plan === 'family'
+              }"
+              class="text-[9px] font-black px-2 py-0.5 rounded-md tracking-wider cursor-pointer">
+              {{ profile.plan === 'pro' ? 'PRO' : (profile.plan === 'family' ? 'FAMILY' : 'FREE') }}
+            </button>
+          </div>
 
           <a routerLink="/" (click)="isMobileMenuOpen = false" routerLinkActive="text-primary font-bold" [routerLinkActiveOptions]="{exact: true}" class="text-gray-300 hover:text-white text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all">Dashboard</a>
           <a routerLink="/pricing" (click)="isMobileMenuOpen = false" routerLinkActive="text-primary font-bold" class="text-gray-300 hover:text-white text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all">Pricing</a>
