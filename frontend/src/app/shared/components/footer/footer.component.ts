@@ -20,11 +20,6 @@ import { RouterModule } from '@angular/router';
             <p class="text-sm max-w-sm leading-relaxed text-gray-400 font-medium">
               Take back control of your subscriptions. Monitor expenses, visualize yearly waste inside the Graveyard, and customize renewal alerts seamlessly.
             </p>
-            <div class="flex items-center space-x-3 text-xs font-semibold text-gray-500">
-              <span>🔒 Secure Firebase Auth</span>
-              <span>•</span>
-              <span>⚡ Real-time Analytics</span>
-            </div>
           </div>
 
           <!-- Navigation Links -->
@@ -66,11 +61,9 @@ import { RouterModule } from '@angular/router';
         <div class="flex flex-col sm:flex-row items-center justify-between text-xs font-semibold text-gray-500 space-y-4 sm:space-y-0">
           <p>© 2026 SubTrackr. All rights reserved.</p>
           <div class="flex space-x-4">
-            <span class="hover:text-white cursor-pointer transition-colors">Privacy Policy</span>
+            <a routerLink="/privacy" class="hover:text-white cursor-pointer transition-colors">Privacy Policy</a>
             <span>•</span>
-            <span class="hover:text-white cursor-pointer transition-colors">Terms of Service</span>
-            <span>•</span>
-            <span class="text-gray-400">Crafted with Angular 17</span>
+            <a routerLink="/terms" class="hover:text-white cursor-pointer transition-colors">Terms of Service</a>
           </div>
         </div>
       </div>
