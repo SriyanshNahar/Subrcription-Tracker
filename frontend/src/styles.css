@@ -28,6 +28,132 @@
   --color-accent: #34D399;
 }
 
+.theme-light {
+  --color-bg: #F8FAFC;
+  --color-card: #FFFFFF;
+  --color-card-rgb: 255, 255, 255;
+  --color-primary: #4F46E5;
+  --color-accent: #0D9488;
+}
+
+/* Global Light Theme Overrides */
+body.theme-light {
+  color: #1E293B !important;
+}
+
+body.theme-light h1,
+body.theme-light h2,
+body.theme-light h3,
+body.theme-light h4,
+body.theme-light h5,
+body.theme-light h6,
+body.theme-light .text-white,
+body.theme-light .text-slate-100 {
+  color: #0F172A !important;
+}
+
+body.theme-light p,
+body.theme-light .text-gray-300,
+body.theme-light .text-gray-400 {
+  color: #475569 !important;
+}
+
+body.theme-light .text-gray-500 {
+  color: #64748B !important;
+}
+
+body.theme-light .text-gray-600 {
+  color: #94A3B8 !important;
+}
+
+body.theme-light .glass-card {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06), 0 8px 15px -6px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.theme-light .border-white\/10,
+body.theme-light .border-white\/5,
+body.theme-light .border-gray-800,
+body.theme-light .border-gray-700\/60,
+body.theme-light .border-gray-700\/50,
+body.theme-light .border-gray-700,
+body.theme-light .divide-gray-800 > *,
+body.theme-light .divide-white\/5 > *,
+body.theme-light .divide-white\/10 > * {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+body.theme-light input,
+body.theme-light select,
+body.theme-light textarea,
+body.theme-light .bg-[#080810]\/80,
+body.theme-light .bg-[#090915],
+body.theme-light .bg-[#0F0F24]\/90 {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+body.theme-light input::placeholder {
+  color: #94A3B8 !important;
+}
+
+body.theme-light select option {
+  background-color: #FFFFFF !important;
+  color: #0F172A !important;
+}
+
+body.theme-light .bg-white\/5,
+body.theme-light .bg-slate-500\/10 {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+body.theme-light .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+body.theme-light .bg-black\/35,
+body.theme-light .bg-slate-600 {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  color: #0F172A !important;
+}
+
+body.theme-light [class*="bg-[linear-gradient(rgba(255,255,255"] {
+  background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px) !important;
+  opacity: 0.8 !important;
+}
+
+body.theme-light .bg-black\/60,
+body.theme-light .bg-black\/70 {
+  background-color: rgba(0, 0, 0, 0.4) !important;
+}
+
+body.theme-light .text-primary {
+  color: var(--color-primary) !important;
+}
+
+body.theme-light .text-accent {
+  color: var(--color-accent) !important;
+}
+
+body.theme-light .text-red-500\/80 {
+  color: #DC2626 !important;
+}
+body.theme-light .text-gray-500\/80 {
+  color: #64748B !important;
+}
+
+body.theme-light .text-gray-300:hover,
+body.theme-light .hover\:text-white:hover {
+  color: var(--color-primary) !important;
+}
+
+body.theme-light .bg-[#000000]\/40 {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
 body {
   @apply bg-background text-white font-sans;
   transition: background-color 0.4s ease, color 0.4s ease;
