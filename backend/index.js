@@ -401,12 +401,14 @@ app.get('/api/analytics/summary', authenticate, async (req, res) => {
     let activeCount = 0;
     
     subs.forEach(s => {
-      if (s.status === 'Active') {
+      if (s && s.status === 'Active') {
         activeCount++;
         let amount = parseFloat(s.amount);
-        if (s.billingCycle === 'Yearly') amount /= 12;
-        if (s.billingCycle === 'Weekly') amount *= 4;
-        totalMonthly += amount;
+        if (!isNaN(amount)) {
+          if (s.billingCycle === 'Yearly') amount /= 12;
+          if (s.billingCycle === 'Weekly') amount *= 4;
+          totalMonthly += amount;
+        }
       }
     });
     
@@ -426,14 +428,20 @@ app.get('/api/analytics/graveyard', authenticate, async (req, res) => {
       subs = inMemoryDB.subscriptions.filter(s => s.userId === req.user.id);
     }
 
-    const inactiveSubs = subs.filter(s => s.status !== 'Active');
+    const inactiveSubs = subs.filter(s => s && s.status !== 'Active');
     let wasted = 0;
-    inactiveSubs.forEach(s => wasted += parseFloat(s.amount));
+    inactiveSubs.forEach(s => {
+      const amount = parseFloat(s.amount);
+      if (!isNaN(amount)) {
+        wasted += amount;
+      }
+    });
     res.json({ wasted, message: `You have wasted ${wasted} on apps you never used!` });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 // --- ALERTS ---
 app.post('/api/alerts/send', authenticate, (req, res) => {

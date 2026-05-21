@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -13,7 +13,7 @@ import { AuthService } from '../../../core/services/auth.service';
         <div class="flex items-center justify-between h-16">
           <!-- Brand Logo -->
           <div class="flex items-center">
-            <a routerLink="/" (click)="isMobileMenuOpen = false" class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">SubTrackr</a>
+            <a routerLink="/" (click)="isMobileMenuOpen = false; isProfileDropdownOpen = false" class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">SubTrackr</a>
           </div>
 
           <!-- Desktop Navigation Options (Visible on large screens) -->
@@ -32,54 +32,116 @@ import { AuthService } from '../../../core/services/auth.service';
               <a routerLink="/" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: true}" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Dashboard</a>
               <a routerLink="/pricing" routerLinkActive="text-primary" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Pricing</a>
               
-              <!-- Graveyard Link & Plan Badge -->
-              <div class="flex items-center space-x-2">
-                <a routerLink="/graveyard" routerLinkActive="text-accent" class="text-gray-300 hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center">
-                  <span>Graveyard</span>
-                </a>
-                
-                <!-- Dynamic Plan Badge Button (Triggers details modal) -->
-                <ng-container *ngIf="auth.userProfile$ | async as profile">
-                  <button 
-                    (click)="openPlanDetails($event)" 
-                    [ngClass]="{
-                      'bg-slate-500/10 text-slate-400 border border-slate-500/30 hover:bg-slate-500/20': profile.plan === 'free' || !profile.plan,
-                      'bg-gradient-to-r from-primary to-accent text-white shadow shadow-primary/20 hover:opacity-90': profile.plan === 'pro',
-                      'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20': profile.plan === 'family'
-                    }"
-                    class="text-[10px] font-black px-2.5 py-0.5 rounded-md tracking-wider transition-all duration-300 transform active:scale-95 cursor-pointer">
-                    {{ profile.plan === 'pro' ? 'PRO' : (profile.plan === 'family' ? 'FAMILY' : 'FREE') }}
-                  </button>
-                </ng-container>
-              </div>
+              <!-- Graveyard Link -->
+              <a routerLink="/graveyard" routerLinkActive="text-accent" class="text-gray-300 hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center mr-2">
+                <span>Graveyard</span>
+              </a>
 
-              <!-- User Profile Widget (matches image layout) -->
+              <!-- User Profile Dropdown Button and Menu -->
               <ng-container *ngIf="auth.userProfile$ | async as profile">
-                <div class="flex items-center space-x-3 pl-4 border-l border-white/10">
-                  <!-- Avatar circle -->
-                  <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white font-black text-sm shadow-md border border-white/10">
-                    {{ getInitials(profile.name) }}
-                  </div>
-                  
-                  <!-- Two-line info block -->
-                  <div class="flex flex-col text-left">
-                    <span class="text-white font-bold text-sm leading-tight">{{ profile.name }}</span>
-                    <span class="text-gray-400 text-xs font-semibold capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : 'Free') }}</span>
-                  </div>
-                  
-                  <!-- Shop/Store front Icon (routes to pricing with transition) -->
-                  <a routerLink="/pricing" class="text-gray-400 hover:text-white transition-colors p-1.5 ml-2 hover:bg-white/5 rounded-lg flex items-center justify-center" title="Pricing & Plan Store">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5.5 w-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h18v2H3V3zm1 4v2c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V7H4zm1 6h14v7H5v-7zm4 3h2v4H9v-4z" />
-                    </svg>
-                  </a>
-
-                  <!-- Logout Icon Button -->
-                  <button (click)="logout()" class="text-gray-400 hover:text-red-400 transition-colors p-1.5 hover:bg-white/5 rounded-lg flex items-center justify-center" title="Logout">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                <div class="relative inline-block text-left pl-4 border-l border-white/10">
+                  <button 
+                    (click)="toggleProfileDropdown($event)" 
+                    class="flex items-center space-x-3 text-left focus:outline-none hover:bg-white/5 px-3 py-1.5 rounded-xl border border-transparent hover:border-white/5 transition-all duration-200 active:scale-[0.98]">
+                    <!-- Avatar circle -->
+                    <div class="w-9 h-9 rounded-full bg-slate-600 flex items-center justify-center text-white font-black text-sm shadow-md border border-white/10">
+                      {{ getInitials(profile.name) }}
+                    </div>
+                    
+                    <!-- Display Name & Chevron -->
+                    <div class="flex flex-col text-left">
+                      <span class="text-white font-bold text-sm leading-tight max-w-[120px] truncate">{{ profile.name }}</span>
+                      <span class="text-gray-400 text-[10px] font-semibold uppercase tracking-wider capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : 'Free') }}</span>
+                    </div>
+                    
+                    <!-- Chevron icon -->
+                    <svg 
+                      [ngClass]="{'rotate-180': isProfileDropdownOpen}"
+                      class="w-4 h-4 text-gray-400 transition-transform duration-300" 
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
+
+                  <!-- Sleek Glassmorphic Dropdown Box -->
+                  <div 
+                    *ngIf="isProfileDropdownOpen" 
+                    class="absolute right-0 mt-3 w-64 rounded-2xl bg-card border border-white/10 shadow-2xl backdrop-blur-xl p-4.5 z-50 animate-slide-down text-white overflow-hidden">
+                    <!-- Ambient Glow decoration inside dropdown -->
+                    <div class="absolute -top-12 -left-12 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="absolute -bottom-12 -right-12 w-24 h-24 bg-accent/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                    <!-- User Header -->
+                    <div class="pb-3 border-b border-white/5 mb-3 relative z-10">
+                      <p class="text-[9px] uppercase font-black text-gray-400 tracking-widest">Signed In As</p>
+                      <h4 class="text-white font-black text-sm truncate mt-0.5" [title]="profile.name">{{ profile.name }}</h4>
+                      <p class="text-gray-400 text-xs truncate font-medium" [title]="user.email">{{ user.email }}</p>
+                    </div>
+
+                    <!-- Active Plan Info widget with Badge Button -->
+                    <div class="p-3 bg-white/5 border border-white/5 rounded-xl mb-3 flex items-center justify-between relative z-10">
+                      <div class="flex flex-col text-left">
+                        <span class="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Account Plan</span>
+                        <span 
+                          [ngClass]="{
+                            'text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent font-black': profile.plan === 'pro',
+                            'text-emerald-400 font-black': profile.plan === 'family',
+                            'text-gray-300 font-bold': profile.plan === 'free' || !profile.plan
+                          }"
+                          class="text-xs capitalize">
+                          {{ profile.plan === 'pro' ? 'Premium Pro' : (profile.plan === 'family' ? 'Shared Family' : 'Starter Free') }}
+                        </span>
+                      </div>
+                      
+                      <!-- Badge Clickable Button -->
+                      <button 
+                        (click)="isProfileDropdownOpen = false; openPlanDetails($event)"
+                        [ngClass]="{
+                          'bg-slate-500/10 text-slate-400 border border-slate-500/30 hover:bg-slate-500/20': profile.plan === 'free' || !profile.plan,
+                          'bg-gradient-to-r from-primary to-accent text-white shadow shadow-primary/20 hover:opacity-90': profile.plan === 'pro',
+                          'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20': profile.plan === 'family'
+                        }"
+                        class="text-[9px] font-black px-2 py-0.5 rounded-md tracking-wider transition-all duration-300 transform active:scale-95 cursor-pointer">
+                        {{ profile.plan === 'pro' ? 'PRO' : (profile.plan === 'family' ? 'FAMILY' : 'FREE') }}
+                      </button>
+                    </div>
+
+                    <!-- Quick Navigation Links inside Dropdown -->
+                    <div class="space-y-1 relative z-10">
+                      <!-- Trigger Plan Details Modal -->
+                      <button 
+                        (click)="isProfileDropdownOpen = false; openPlanDetails($event)" 
+                        class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all text-xs font-semibold text-left">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        <span>My Plan Benefits</span>
+                      </button>
+
+                      <!-- Upgrade Pricing Store -->
+                      <a 
+                        routerLink="/pricing" 
+                        (click)="isProfileDropdownOpen = false" 
+                        class="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all text-xs font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        <span>Upgrade Store</span>
+                      </a>
+                    </div>
+
+                    <div class="h-px bg-white/5 my-2 relative z-10"></div>
+
+                    <!-- Red Logout Button inside Dropdown -->
+                    <button 
+                      (click)="isProfileDropdownOpen = false; logout()" 
+                      class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-xs font-bold text-left relative z-10">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      <span>Logout Account</span>
+                    </button>
+                  </div>
                 </div>
               </ng-container>
             </ng-container>
@@ -92,9 +154,9 @@ import { AuthService } from '../../../core/services/auth.service';
             </ng-template>
           </div>
 
-          <!-- Mobile Right Section: Theme Selector + Hamburger Toggle (Visible on smaller screens) -->
+          <!-- Mobile Right Section: Theme Selector + Hamburger Toggle -->
           <div class="flex items-center space-x-3 lg:hidden">
-            <!-- Theme Dropdown Switcher (Visible on mobile/tablet directly for accessibility) -->
+            <!-- Theme Dropdown Switcher -->
             <div class="relative inline-block text-left mr-1">
               <select [value]="activeTheme" (change)="onThemeChange($event)" class="bg-black/35 border border-white/10 rounded-xl px-2 py-0.5 text-[11px] text-gray-300 focus:outline-none focus:border-primary cursor-pointer font-semibold">
                 <option value="theme-midnight">🌌 Midnight</option>
@@ -118,13 +180,13 @@ import { AuthService } from '../../../core/services/auth.service';
         </div>
       </div>
 
-      <!-- Mobile Dropdown Menu Drawer (Visible when isMobileMenuOpen is true) -->
+      <!-- Mobile Dropdown Menu Drawer -->
       <div 
         *ngIf="isMobileMenuOpen" 
         class="lg:hidden absolute top-16 left-0 w-full z-40 bg-card/95 backdrop-blur-xl border-b border-white/5 p-5 flex flex-col space-y-3.5 animate-slide-down">
         
         <ng-container *ngIf="auth.currentUser$ | async as user; else guestMobile">
-          <!-- Mobile Profile Widget -->
+          <!-- Mobile Profile Widget Card -->
           <ng-container *ngIf="auth.userProfile$ | async as profile">
             <div class="flex items-center space-x-3 p-3 bg-white/5 rounded-2xl border border-white/5 mb-2">
               <!-- Avatar circle -->
@@ -138,27 +200,9 @@ import { AuthService } from '../../../core/services/auth.service';
                 <span class="text-gray-400 text-xs font-semibold capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : 'Free') }}</span>
               </div>
               
-              <!-- Store icon on mobile -->
-              <a routerLink="/pricing" (click)="isMobileMenuOpen = false" class="text-gray-400 hover:text-white transition-colors p-1.5 hover:bg-white/5 rounded-lg flex items-center justify-center" title="Pricing Store">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </a>
-            </div>
-          </ng-container>
-
-          <a routerLink="/" (click)="isMobileMenuOpen = false" routerLinkActive="text-primary font-bold" [routerLinkActiveOptions]="{exact: true}" class="text-gray-300 hover:text-white text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all">Dashboard</a>
-          <a routerLink="/pricing" (click)="isMobileMenuOpen = false" routerLinkActive="text-primary font-bold" class="text-gray-300 hover:text-white text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all">Pricing</a>
-          
-          <!-- Graveyard & Plan Badge side-by-side in Mobile -->
-          <div class="flex items-center justify-between py-1 px-3 hover:bg-white/5 rounded-xl transition-all">
-            <a routerLink="/graveyard" (click)="isMobileMenuOpen = false" routerLinkActive="text-accent font-bold" class="text-gray-300 hover:text-accent text-sm flex-grow">
-              <span>🪦 Expense Graveyard</span>
-            </a>
-            <!-- Mobile Badge Button -->
-            <ng-container *ngIf="auth.userProfile$ | async as profile">
+              <!-- Mobile badge details button -->
               <button 
-                (click)="openPlanDetails($event)" 
+                (click)="isMobileMenuOpen = false; openPlanDetails($event)" 
                 [ngClass]="{
                   'bg-slate-500/10 text-slate-400 border border-slate-500/30': profile.plan === 'free' || !profile.plan,
                   'bg-gradient-to-r from-primary to-accent text-white shadow shadow-primary/20': profile.plan === 'pro',
@@ -167,11 +211,20 @@ import { AuthService } from '../../../core/services/auth.service';
                 class="text-[9px] font-black px-2 py-0.5 rounded-md tracking-wider cursor-pointer">
                 {{ profile.plan === 'pro' ? 'PRO' : (profile.plan === 'family' ? 'FAMILY' : 'FREE') }}
               </button>
-            </ng-container>
-          </div>
+            </div>
+          </ng-container>
+
+          <a routerLink="/" (click)="isMobileMenuOpen = false" routerLinkActive="text-primary font-bold" [routerLinkActiveOptions]="{exact: true}" class="text-gray-300 hover:text-white text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all">Dashboard</a>
+          <a routerLink="/pricing" (click)="isMobileMenuOpen = false" routerLinkActive="text-primary font-bold" class="text-gray-300 hover:text-white text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all">Pricing</a>
+          
+          <!-- Expense Graveyard Mobile link -->
+          <a routerLink="/graveyard" (click)="isMobileMenuOpen = false" routerLinkActive="text-accent font-bold" class="text-gray-300 hover:text-accent text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all flex items-center">
+            <span>🪦 Expense Graveyard</span>
+          </a>
           
           <div class="h-px bg-white/5 my-2"></div>
           
+          <!-- Mobile Logout option -->
           <button 
             (click)="logout(); isMobileMenuOpen = false" 
             class="text-left text-gray-400 hover:text-white text-sm py-2 px-3 hover:bg-red-500/10 rounded-xl transition-all flex items-center space-x-2">
@@ -359,11 +412,24 @@ export class NavbarComponent implements OnInit {
   activeTheme = 'theme-midnight';
   showPlanModal = false;
   isMobileMenuOpen = false;
+  isProfileDropdownOpen = false;
 
-  constructor(public auth: AuthService, private router: Router) {}
+  constructor(
+    public auth: AuthService,
+    private router: Router,
+    private elementRef: ElementRef
+  ) {}
 
   ngOnInit() {
     this.activeTheme = localStorage.getItem('subtrackr_theme') || 'theme-midnight';
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    // If click is outside the navbar component, close the profile dropdown
+    if (!this.elementRef.nativeElement.contains(event.target)) {
+      this.isProfileDropdownOpen = false;
+    }
   }
 
   onThemeChange(event: any) {
@@ -389,6 +455,12 @@ export class NavbarComponent implements OnInit {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
   }
 
+  toggleProfileDropdown(event: Event) {
+    event.stopPropagation();
+    event.preventDefault();
+    this.isProfileDropdownOpen = !this.isProfileDropdownOpen;
+  }
+
   logout() {
     this.auth.logout();
     this.router.navigate(['/login']);
@@ -403,3 +475,4 @@ export class NavbarComponent implements OnInit {
     return parts[0].substring(0, 2).toUpperCase();
   }
 }
+
