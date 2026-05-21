@@ -4,9 +4,11 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { ToastrService } from 'ngx-toastr';
 import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
+import { Chart, ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import { AuthService } from '../../core/services/auth.service';
 import { Router, RouterModule } from '@angular/router';
+
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-dashboard',
@@ -54,65 +56,124 @@ import { Router, RouterModule } from '@angular/router';
         </div>
       </div>
 
-      <!-- Subscriptions List -->
-      <div class="glass-card overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-800 flex justify-between items-center">
-          <h2 class="text-xl font-semibold">Your Subscriptions</h2>
-          <span class="text-xs text-gray-500" *ngIf="activeUserPlan === 'free'">
-            {{ subscriptions.length }} / 5 subscriptions used
-          </span>
-        </div>
-        <div class="divide-y divide-gray-800">
-          <div *ngFor="let sub of subscriptions" class="p-6 flex items-center justify-between hover:bg-white/5 transition-colors">
-            <div class="flex items-center space-x-4">
-              <div class="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center text-xl overflow-hidden">
-                <img *ngIf="sub.logo" [src]="getLogoUrl(sub)" (error)="sub.logo = null" alt="logo" class="w-full h-full object-cover">
-                <span *ngIf="!sub.logo">{{ sub.name.charAt(0) }}</span>
+      <!-- Main Dashboard Grid Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+        
+        <!-- Left Section: Subscriptions Table (Col Span 8) -->
+        <div class="lg:col-span-8 space-y-6">
+          <div class="glass-card overflow-hidden">
+            <!-- Header with Search & Filters -->
+            <div class="px-6 py-4 border-b border-gray-800 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div class="flex items-center space-x-3">
+                <h2 class="text-xl font-semibold">Your Subscriptions</h2>
+                <span class="text-xs text-gray-500" *ngIf="activeUserPlan === 'free'">
+                  {{ subscriptions.length }} / 5 used
+                </span>
               </div>
-              <div>
-                <h3 class="text-lg font-medium text-white flex items-center space-x-2">
-                  <span>{{ sub.name }}</span>
-                  <span *ngIf="sub.status === 'Want to Cancel'" class="bg-amber-500/10 text-amber-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-amber-500/25">
-                    Want to Cancel
-                  </span>
-                  <span *ngIf="sub.status === 'Inactive'" class="bg-red-500/10 text-red-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-red-500/25">
-                    Inactive 🪦
-                  </span>
-                </h3>
-                <p class="text-sm text-gray-400">{{ sub.category }} • Renews {{ sub.renewalDate | date:'mediumDate' }}</p>
+              
+              <div class="flex flex-wrap items-center gap-3">
+                <!-- Search bar -->
+                <div class="relative w-full sm:w-48">
+                  <input type="text" (input)="onSearchChange($event)" placeholder="Search..."
+                    class="w-full bg-[#0F0F24]/90 border border-gray-700/60 rounded-xl px-3 py-1.5 pl-8 focus:outline-none focus:border-primary text-xs text-white">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 absolute left-2.5 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                
+                <!-- Category Filter -->
+                <select (change)="onCategoryChange($event)" class="bg-[#0F0F24]/90 border border-gray-700/60 rounded-xl px-2.5 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-primary cursor-pointer">
+                  <option value="All">All Categories</option>
+                  <option value="Entertainment">Entertainment</option>
+                  <option value="Work">Work</option>
+                  <option value="Health">Health</option>
+                  <option value="Other">Other</option>
+                </select>
+
+                <!-- Status Filter -->
+                <select (change)="onStatusChange($event)" class="bg-[#0F0F24]/90 border border-gray-700/60 rounded-xl px-2.5 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-primary cursor-pointer">
+                  <option value="All">All Statuses</option>
+                  <option value="Active">Active</option>
+                  <option value="Want to Cancel">Want to Cancel</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
               </div>
             </div>
-            <div class="text-right flex items-center space-x-4">
-              <div>
-                <p class="text-lg font-bold text-white">{{ sub.amount | currency:sub.currency || 'INR' }}</p>
-                <p class="text-sm text-gray-400">/ {{ sub.billingCycle }}</p>
+            
+            <div class="divide-y divide-gray-800">
+              <div *ngFor="let sub of filteredSubscriptions" class="p-6 flex items-center justify-between hover:bg-white/5 transition-colors">
+                <div class="flex items-center space-x-4">
+                  <div class="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center text-xl overflow-hidden">
+                    <img *ngIf="sub.logo" [src]="getLogoUrl(sub)" (error)="sub.logo = null" alt="logo" class="w-full h-full object-cover">
+                    <span *ngIf="!sub.logo">{{ sub.name.charAt(0) }}</span>
+                  </div>
+                  <div>
+                    <h3 class="text-lg font-medium text-white flex items-center space-x-2">
+                      <span>{{ sub.name }}</span>
+                      <span *ngIf="sub.status === 'Want to Cancel'" class="bg-amber-500/10 text-amber-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-amber-500/25">
+                        Want to Cancel
+                      </span>
+                      <span *ngIf="sub.status === 'Inactive'" class="bg-red-500/10 text-red-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-red-500/25">
+                        Inactive 🪦
+                      </span>
+                    </h3>
+                    <p class="text-sm text-gray-400">{{ sub.category }} • Renews {{ sub.renewalDate | date:'mediumDate' }}</p>
+                  </div>
+                </div>
+                <div class="text-right flex items-center space-x-4">
+                  <div>
+                    <p class="text-lg font-bold text-white">{{ sub.amount | currency:sub.currency || 'INR' }}</p>
+                    <p class="text-sm text-gray-400">/ {{ sub.billingCycle }}</p>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <button *ngIf="sub.status !== 'Inactive'" (click)="openCancelAssistant(sub)" class="text-amber-500 hover:text-amber-400 p-2" title="Cancel Assistant">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </button>
+                    <button (click)="deleteSub(sub.id)" class="text-red-500 hover:text-red-400 p-2" title="Delete Permanent">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="flex items-center space-x-2">
-                <!-- Cancel Assistant Button -->
-                <button *ngIf="sub.status !== 'Inactive'" (click)="openCancelAssistant(sub)" class="text-amber-500 hover:text-amber-400 p-2" title="Cancel Assistant">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                </button>
-                <!-- Delete from DB Button -->
-                <button (click)="deleteSub(sub.id)" class="text-red-500 hover:text-red-400 p-2" title="Delete Permanent">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                  </svg>
-                </button>
+              <div *ngIf="filteredSubscriptions.length === 0" class="p-8 text-center text-gray-500">
+                No subscriptions found. Click "Add Subscription" or adjust filters to see results!
               </div>
             </div>
           </div>
-          <div *ngIf="subscriptions.length === 0" class="p-8 text-center text-gray-500">
-            No subscriptions found. Click "Add Subscription" to get started!
+        </div>
+
+        <!-- Right Section: Spend Analytics Chart (Col Span 4) -->
+        <div class="lg:col-span-4 space-y-6">
+          <div class="glass-card p-6 flex flex-col justify-between h-[380px] border border-gray-700/50 shadow-2xl relative overflow-hidden">
+            <h3 class="text-lg font-bold text-white mb-4">Spend Breakdown</h3>
+            <div class="relative flex-1 flex items-center justify-center min-h-[220px]">
+              <canvas *ngIf="chartData && chartData.datasets[0].data.length > 0"
+                baseChart
+                [data]="chartData"
+                [options]="chartOptions"
+                [type]="chartType">
+              </canvas>
+              <div *ngIf="!chartData || chartData.datasets[0].data.length === 0" class="text-center text-sm text-gray-500 flex flex-col items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.003 9.003 0 1020.945 13H11V3.055z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                </svg>
+                <span>No active subscriptions to project category breakdown.</span>
+              </div>
+            </div>
           </div>
         </div>
+
       </div>
     </div>
 
     <!-- Add Modal -->
     <div *ngIf="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div class="glass-card w-full max-w-md p-6 relative">
+      <div class="glass-card w-full max-w-md p-6 relative border border-gray-700/60 shadow-2xl">
         <button (click)="showAddModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -124,16 +185,16 @@ import { Router, RouterModule } from '@angular/router';
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-400 mb-1">Name</label>
-              <input type="text" formControlName="name" class="w-full bg-[#0F0F0F] border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-primary text-white" placeholder="Netflix, Spotify...">
+              <input type="text" formControlName="name" class="w-full bg-[#090915] border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-primary text-white" placeholder="Netflix, Spotify...">
             </div>
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-400 mb-1">Amount</label>
-                <input type="number" formControlName="amount" class="w-full bg-[#0F0F0F] border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-primary text-white" placeholder="0.00">
+                <input type="number" formControlName="amount" class="w-full bg-[#090915] border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-primary text-white" placeholder="0.00">
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-400 mb-1">Currency</label>
-                <select formControlName="currency" class="w-full bg-[#0F0F0F] border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-primary text-white">
+                <select formControlName="currency" class="w-full bg-[#090915] border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-primary text-white">
                   <option value="INR">INR</option>
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
@@ -142,7 +203,7 @@ import { Router, RouterModule } from '@angular/router';
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-400 mb-1">Billing Cycle</label>
-              <select formControlName="billingCycle" class="w-full bg-[#0F0F0F] border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-primary text-white">
+              <select formControlName="billingCycle" class="w-full bg-[#090915] border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-primary text-white">
                 <option value="Monthly">Monthly</option>
                 <option value="Yearly">Yearly</option>
                 <option value="Weekly">Weekly</option>
@@ -150,7 +211,7 @@ import { Router, RouterModule } from '@angular/router';
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-400 mb-1">Category</label>
-              <select formControlName="category" class="w-full bg-[#0F0F0F] border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-primary text-white">
+              <select formControlName="category" class="w-full bg-[#090915] border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-primary text-white">
                 <option value="Entertainment">Entertainment</option>
                 <option value="Work">Work</option>
                 <option value="Health">Health</option>
@@ -159,10 +220,10 @@ import { Router, RouterModule } from '@angular/router';
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-400 mb-1">Start Date</label>
-              <input type="date" formControlName="startDate" class="w-full bg-[#0F0F0F] border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-primary text-white">
+              <input type="date" formControlName="startDate" class="w-full bg-[#090915] border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-primary text-white">
             </div>
           </div>
-          <button type="submit" [disabled]="subForm.invalid" class="w-full mt-6 bg-primary hover:bg-opacity-90 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50">
+          <button type="submit" [disabled]="subForm.invalid" class="w-full mt-6 bg-primary hover:bg-opacity-90 text-white font-medium py-2.5 px-4 rounded-lg transition-colors disabled:opacity-50">
             Save Subscription
           </button>
         </form>
@@ -171,7 +232,7 @@ import { Router, RouterModule } from '@angular/router';
 
     <!-- Cancel Assistant Modal -->
     <div *ngIf="showCancelModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div class="glass-card w-full max-w-md p-6 relative border-2 border-amber-500/20">
+      <div class="glass-card w-full max-w-md p-6 relative border border-amber-500/20 shadow-2xl">
         <button (click)="showCancelModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -218,6 +279,50 @@ export class DashboardComponent implements OnInit {
   subForm: FormGroup;
   activeUserPlan = 'free';
 
+  // Search & Filters state
+  searchTerm = '';
+  selectedCategory = 'All';
+  selectedStatus = 'All';
+
+  // Currency Exchange Rates state
+  exchangeRates: any = null;
+
+  // Chart properties
+  public chartType: ChartType = 'doughnut';
+  public chartData: ChartData<'doughnut'> = {
+    labels: [],
+    datasets: [{ data: [] }]
+  };
+  public chartOptions: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          color: '#9CA3AF',
+          font: { family: 'Inter', size: 11, weight: 'bold' },
+          padding: 10
+        }
+      },
+      tooltip: {
+        backgroundColor: '#111827',
+        titleColor: '#FFFFFF',
+        bodyColor: '#9CA3AF',
+        borderColor: '#374151',
+        borderWidth: 1,
+        cornerRadius: 8,
+        callbacks: {
+          label: (context: any) => {
+            const val = context.raw as number;
+            return ` ₹${val.toFixed(2)}/mo`;
+          }
+        }
+      }
+    },
+    cutout: '70%'
+  };
+
   getLogoUrl(sub: any): string {
     if (!sub.logo) return '';
     if (sub.logo.includes('clearbit.com')) {
@@ -258,16 +363,63 @@ export class DashboardComponent implements OnInit {
         this.activeUserPlan = profile.plan || 'free';
       }
     });
+    this.requestNotificationPermission();
   }
 
   loadData() {
+    this.subService.getExchangeRates().subscribe({
+      next: (rateRes: any) => {
+        if (rateRes && rateRes.rates) {
+          this.exchangeRates = rateRes.rates;
+        }
+        this.fetchSubscriptionsAndSum();
+      },
+      error: () => {
+        // Graceful fallback for offline usage
+        this.exchangeRates = { INR: 1, USD: 0.012, EUR: 0.011 };
+        this.fetchSubscriptionsAndSum();
+      }
+    });
+  }
+
+  private fetchSubscriptionsAndSum() {
     this.subService.getSubscriptions().subscribe({
-      next: (res: any) => this.subscriptions = res,
+      next: (res: any) => {
+        this.subscriptions = res;
+        this.calculateSummary();
+        this.checkUpcomingRenewalsAndNotify();
+      },
       error: () => this.toastr.error('Failed to load subscriptions')
     });
-    this.subService.getAnalyticsSummary().subscribe({
-      next: (res: any) => this.summary = res
+  }
+
+  calculateSummary() {
+    let totalMonthly = 0;
+    let activeCount = 0;
+
+    this.subscriptions.forEach(s => {
+      if (s.status === 'Active') {
+        activeCount++;
+        let amount = parseFloat(s.amount);
+
+        if (s.currency && s.currency !== 'INR' && this.exchangeRates && this.exchangeRates[s.currency]) {
+          amount = amount / this.exchangeRates[s.currency];
+        }
+
+        if (s.billingCycle === 'Yearly') amount /= 12;
+        if (s.billingCycle === 'Weekly') amount *= 4;
+
+        totalMonthly += amount;
+      }
     });
+
+    this.summary = {
+      totalMonthly: totalMonthly,
+      totalYearly: totalMonthly * 12,
+      activeCount: activeCount
+    };
+    
+    this.updateCategoryChart();
   }
 
   openAddModal() {
@@ -375,5 +527,118 @@ export class DashboardComponent implements OnInit {
         error: () => this.toastr.error('Failed to cancel subscription.')
       });
     }
+  }
+
+  // --- FILTERS & SEARCH ACTIONS ---
+  onSearchChange(event: any) {
+    this.searchTerm = event.target.value || '';
+  }
+
+  onCategoryChange(event: any) {
+    this.selectedCategory = event.target.value || 'All';
+  }
+
+  onStatusChange(event: any) {
+    this.selectedStatus = event.target.value || 'All';
+  }
+
+  get filteredSubscriptions(): any[] {
+    return this.subscriptions.filter(sub => {
+      const matchesSearch = sub.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                            (sub.category && sub.category.toLowerCase().includes(this.searchTerm.toLowerCase()));
+      const matchesCategory = this.selectedCategory === 'All' || sub.category === this.selectedCategory;
+      const matchesStatus = this.selectedStatus === 'All' || sub.status === this.selectedStatus;
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }
+
+  // --- WEB NOTIFICATIONS API ---
+  requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }
+
+  checkUpcomingRenewalsAndNotify() {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    const now = new Date();
+    const twoDaysFromNow = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+    const upcoming = this.subscriptions.filter(sub => {
+      if (sub.status !== 'Active') return false;
+      const renewal = new Date(sub.renewalDate);
+      return renewal > now && renewal <= twoDaysFromNow;
+    });
+
+    if (upcoming.length > 0) {
+      const lastNotified = localStorage.getItem('last_notified_renewals');
+      const todayStr = now.toDateString();
+
+      if (lastNotified !== todayStr) {
+        localStorage.setItem('last_notified_renewals', todayStr);
+        upcoming.forEach(sub => {
+          new Notification(`Subscription Renewal Alert ⏳`, {
+            body: `${sub.name} is renewing soon on ${new Date(sub.renewalDate).toLocaleDateString()} (${sub.amount} ${sub.currency || 'INR'})`,
+            icon: '/favicon.png'
+          });
+        });
+      }
+    }
+  }
+
+  // --- CHART GENERATION & UPDATE ---
+  updateCategoryChart() {
+    const categoryTotals: { [key: string]: number } = {
+      Entertainment: 0,
+      Work: 0,
+      Health: 0,
+      Other: 0
+    };
+
+    let totalActiveAmount = 0;
+
+    this.subscriptions.forEach(s => {
+      if (s.status === 'Active') {
+        let amount = parseFloat(s.amount);
+
+        // Convert to INR if different
+        if (s.currency && s.currency !== 'INR' && this.exchangeRates && this.exchangeRates[s.currency]) {
+          amount = amount / this.exchangeRates[s.currency];
+        }
+
+        if (s.billingCycle === 'Yearly') amount /= 12;
+        if (s.billingCycle === 'Weekly') amount *= 4;
+
+        const cat = s.category || 'Other';
+        if (categoryTotals[cat] !== undefined) {
+          categoryTotals[cat] += amount;
+        } else {
+          categoryTotals[cat] = amount;
+        }
+        totalActiveAmount += amount;
+      }
+    });
+
+    const labels = Object.keys(categoryTotals);
+    const data = Object.values(categoryTotals);
+
+    this.chartData = {
+      labels: labels,
+      datasets: [
+        {
+          data: totalActiveAmount > 0 ? data : [],
+          backgroundColor: [
+            '#6C63FF', // Primary (Entertainment)
+            '#10B981', // Emerald (Work)
+            '#F43F5E', // Rose (Health)
+            '#F59E0B'  // Amber (Other)
+          ],
+          borderColor: '#111827',
+          borderWidth: 2,
+          hoverOffset: 6
+        }
+      ]
+    };
   }
 }

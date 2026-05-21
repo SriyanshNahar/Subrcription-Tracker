@@ -4,10 +4,40 @@
 @tailwind components;
 @tailwind utilities;
 
+:root, .theme-midnight {
+  --color-bg: #0A0A18;
+  --color-card: #121226;
+  --color-card-rgb: 18, 18, 38;
+  --color-primary: #6C63FF;
+  --color-accent: #00D4AA;
+}
+
+.theme-volcanic {
+  --color-bg: #1A0D0D;
+  --color-card: #2B1515;
+  --color-card-rgb: 43, 21, 21;
+  --color-primary: #FF5A1F;
+  --color-accent: #FFAF00;
+}
+
+.theme-forest {
+  --color-bg: #061410;
+  --color-card: #0F2D24;
+  --color-card-rgb: 15, 45, 36;
+  --color-primary: #10B981;
+  --color-accent: #34D399;
+}
+
 body {
-  @apply bg-[#0F0F0F] text-white font-sans;
+  @apply bg-background text-white font-sans;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 .glass-card {
-  @apply bg-[#1A1A2E] bg-opacity-80 backdrop-blur-md rounded-xl border border-gray-700/50 shadow-lg;
+  background-color: rgba(var(--color-card-rgb), 0.75);
+  backdrop-filter: blur(16px);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  transition: background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
 }

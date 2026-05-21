@@ -33,4 +33,8 @@ export class SubscriptionService {
   getGraveyard() {
     return this.http.get(`${this.apiUrl}/analytics/graveyard`);
   }
+
+  getExchangeRates() {
+    return this.http.get('https://open.er-api.com/v6/latest/INR');
+  }
 }

@@ -6,10 +6,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: '#0F0F0F',
-        card: '#1A1A2E',
-        primary: '#6C63FF',
-        accent: '#00D4AA'
+        background: 'var(--color-bg)',
+        card: 'var(--color-card)',
+        primary: 'var(--color-primary)',
+        accent: 'var(--color-accent)'
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
