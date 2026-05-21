@@ -18,6 +18,11 @@ import { AuthService } from '../../../core/services/auth.service';
           Click the link to activate your account.
         </p>
 
+        <div class="bg-amber-950/20 border border-amber-500/30 text-amber-300/80 rounded-xl p-3 mb-6 text-xs text-left flex gap-2 items-start">
+          <span>⚠️</span>
+          <p><strong>Note:</strong> If you don't receive the email within a few minutes, please check your <strong>Spam</strong> or <strong>Junk</strong> folder in the Gmail app or your email client.</p>
+        </div>
+
         <div *ngIf="resendSuccess" class="bg-green-900/30 border border-green-500 text-green-400 rounded-lg p-3 mb-4 text-sm">
           Email sent! Check your inbox again.
         </div>

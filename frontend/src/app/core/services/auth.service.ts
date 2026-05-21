@@ -3,6 +3,7 @@ import { Auth, signInWithPopup, GoogleAuthProvider,
          createUserWithEmailAndPassword,
          signInWithEmailAndPassword,
          sendEmailVerification,
+         sendPasswordResetEmail,
          signOut, user } from '@angular/fire/auth';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -112,6 +113,15 @@ export class AuthService {
     const currentUser = this.auth.currentUser;
     if (currentUser) {
       await sendEmailVerification(currentUser);
+    }
+  }
+
+  // ✅ SEND PASSWORD RESET EMAIL
+  async sendPasswordReset(email: string): Promise<void> {
+    try {
+      await sendPasswordResetEmail(this.auth, email);
+    } catch (error: any) {
+      throw new Error(error.message);
     }
   }
 

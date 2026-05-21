@@ -24,6 +24,12 @@ import { ToastrService } from 'ngx-toastr';
           {{ errorMessage }}
         </div>
 
+        <!-- Success/Info Alert for Forgot Password -->
+        <div *ngIf="forgotPasswordSent" class="bg-amber-950/20 border border-amber-500/30 text-amber-300/80 rounded-xl p-3 mb-4 text-xs flex gap-2 items-start text-left">
+          <span>⚠️</span>
+          <p><strong>Password reset email sent!</strong> If you do not see it in a few minutes, please check your <strong>Spam</strong> or <strong>Junk</strong> folder in the Gmail app.</p>
+        </div>
+
         <!-- GOOGLE LOGIN BUTTON -->
         <button
           (click)="onGoogleLogin()"
@@ -57,7 +63,15 @@ import { ToastrService } from 'ngx-toastr';
 
         <!-- Password Input -->
         <div class="mb-6">
-          <label class="text-gray-400 text-sm mb-1 block">Password</label>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-gray-400 text-sm block">Password</label>
+            <button
+              (click)="onForgotPassword()"
+              type="button"
+              class="text-xs text-accent hover:underline focus:outline-none bg-transparent border-0 p-0 cursor-pointer">
+              Forgot password?
+            </button>
+          </div>
           <input
             [(ngModel)]="password"
             type="password"
@@ -95,6 +109,7 @@ export class LoginComponent {
   password = '';
   isLoading = false;
   errorMessage = '';
+  forgotPasswordSent = false;
 
   constructor(
     private recaptchaV3Service: ReCaptchaV3Service,
@@ -105,6 +120,7 @@ export class LoginComponent {
 
   async onGoogleLogin(): Promise<void> {
     this.isLoading = true;
+    this.forgotPasswordSent = false;
     try {
       await this.authService.loginWithGoogle();
       this.toastr.success('Logged in successfully');
@@ -124,6 +140,7 @@ export class LoginComponent {
 
     this.isLoading = true;
     this.errorMessage = '';
+    this.forgotPasswordSent = false;
 
     try {
       // 1. Get reCAPTCHA token
@@ -142,6 +159,29 @@ export class LoginComponent {
       // 4. Proceed with login
       await this.authService.loginWithEmail(this.email, this.password);
       this.toastr.success('Logged in successfully');
+    } catch (error: any) {
+      this.errorMessage = error.message;
+      this.toastr.error(error.message);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async onForgotPassword(): Promise<void> {
+    if (!this.email) {
+      this.errorMessage = 'Please enter your email address in the Email field above.';
+      this.toastr.warning('Please enter your email first.');
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.forgotPasswordSent = false;
+
+    try {
+      await this.authService.sendPasswordReset(this.email);
+      this.forgotPasswordSent = true;
+      this.toastr.success('Password reset email sent! Please check your inbox.');
     } catch (error: any) {
       this.errorMessage = error.message;
       this.toastr.error(error.message);
