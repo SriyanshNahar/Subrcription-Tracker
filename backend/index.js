@@ -119,11 +119,31 @@ try {
   dbType = 'memory';
 }
 
-const inMemoryDB = {
+const DB_FILE = path.join(__dirname, 'database.json');
+let inMemoryDB = {
   users: [],
   subscriptions: [],
   alerts: [],
   payments: []
+};
+
+// Safely restore data from local storage
+if (fs.existsSync(DB_FILE)) {
+  try {
+    inMemoryDB = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    console.log('📦 SUCCESS: Restored local persistent backup from database.json');
+  } catch (err) {
+    console.error('⚠️ database.json parse failed, resetting to empty schema:', err.message);
+  }
+}
+
+// Commit local changes to file backup
+const saveLocalDB = () => {
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(inMemoryDB, null, 2), 'utf8');
+  } catch (err) {
+    console.error('⚠️ Failed to save persistent database.json backup:', err.message);
+  }
 };
 
 // --- DATABASE PLAN HELPERS ---
@@ -149,6 +169,7 @@ const updateUserPlan = async (userId, planKey, razorpaySubscriptionId) => {
     user.planExpiry = planExpiry;
     user.razorpaySubscriptionId = razorpaySubscriptionId;
     user.updatedAt = new Date();
+    saveLocalDB();
   }
   console.log(`Plan ${planName} activated for user ${userId}`);
 };
@@ -168,6 +189,7 @@ const downgradeUserToFree = async (userId) => {
       user.razorpaySubscriptionId = null;
       user.planExpiry = null;
       user.updatedAt = new Date();
+      saveLocalDB();
     }
   }
   console.log(`Plan downgraded to free for user ${userId}`);
@@ -255,30 +277,76 @@ app.post('/api/auth/register', async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Missing fields' });
   
-  const existingUser = inMemoryDB.users.find(u => u.email === email);
-  if (existingUser) return res.status(400).json({ error: 'User already exists' });
-  
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const newUser = {
-    id: Date.now().toString(),
-    name, email, password: hashedPassword, plan: 'free', currency: 'INR', createdAt: new Date()
-  };
-  inMemoryDB.users.push(newUser);
-  
-  const token = jwt.sign({ id: newUser.id, email: newUser.email }, process.env.JWT_SECRET || 'supersecretjwtkey123');
-  res.json({ token, user: { id: newUser.id, name: newUser.name, email: newUser.email, plan: newUser.plan } });
+  try {
+    let existingUser = null;
+    if (dbType === 'firestore') {
+      const snapshot = await db.collection('users').where('email', '==', email).limit(1).get();
+      if (!snapshot.empty) {
+        existingUser = snapshot.docs[0].data();
+      }
+    } else {
+      existingUser = inMemoryDB.users.find(u => u.email === email);
+    }
+    
+    if (existingUser) return res.status(400).json({ error: 'User already exists' });
+    
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const userId = Date.now().toString();
+    const newUser = {
+      id: userId,
+      name,
+      email,
+      password: hashedPassword,
+      plan: 'free',
+      currency: 'INR',
+      createdAt: new Date()
+    };
+    
+    if (dbType === 'firestore') {
+      await db.collection('users').doc(userId).set(newUser);
+    } else {
+      inMemoryDB.users.push(newUser);
+      saveLocalDB();
+    }
+    
+    const token = jwt.sign(
+      { id: newUser.id, email: newUser.email, name: newUser.name }, 
+      process.env.JWT_SECRET || 'supersecretjwtkey123'
+    );
+    res.json({ token, user: { id: newUser.id, name: newUser.name, email: newUser.email, plan: newUser.plan } });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
-  const user = inMemoryDB.users.find(u => u.email === email);
-  if (!user) return res.status(404).json({ error: 'User not found' });
+  if (!email || !password) return res.status(400).json({ error: 'Missing email or password' });
   
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(401).json({ error: 'Invalid password' });
-  
-  const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || 'supersecretjwtkey123');
-  res.json({ token, user: { id: user.id, name: user.name, email: user.email, plan: user.plan } });
+  try {
+    let user = null;
+    if (dbType === 'firestore') {
+      const snapshot = await db.collection('users').where('email', '==', email).limit(1).get();
+      if (!snapshot.empty) {
+        user = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+      }
+    } else {
+      user = inMemoryDB.users.find(u => u.email === email);
+    }
+    
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(401).json({ error: 'Invalid password' });
+    
+    const token = jwt.sign(
+      { id: user.id, email: user.email, name: user.name }, 
+      process.env.JWT_SECRET || 'supersecretjwtkey123'
+    );
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, plan: user.plan } });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // --- SUBSCRIPTIONS ROUTES ---
@@ -347,6 +415,7 @@ app.post('/api/subscriptions', authenticate, async (req, res) => {
     } else {
       const sub = { ...req.body, id: Date.now().toString(), userId: req.user.id, createdAt: new Date() };
       inMemoryDB.subscriptions.push(sub);
+      saveLocalDB();
       res.json(sub);
     }
   } catch (error) {
@@ -363,6 +432,7 @@ app.put('/api/subscriptions/:id', authenticate, async (req, res) => {
       const index = inMemoryDB.subscriptions.findIndex(s => s.id === req.params.id && s.userId === req.user.id);
       if (index === -1) return res.status(404).json({ error: 'Not found' });
       inMemoryDB.subscriptions[index] = { ...inMemoryDB.subscriptions[index], ...req.body };
+      saveLocalDB();
       res.json(inMemoryDB.subscriptions[index]);
     }
   } catch (error) {
@@ -379,6 +449,7 @@ app.delete('/api/subscriptions/:id', authenticate, async (req, res) => {
       const index = inMemoryDB.subscriptions.findIndex(s => s.id === req.params.id && s.userId === req.user.id);
       if (index === -1) return res.status(404).json({ error: 'Not found' });
       inMemoryDB.subscriptions.splice(index, 1);
+      saveLocalDB();
       res.json({ success: true });
     }
   } catch (error) {
@@ -488,6 +559,7 @@ app.get('/api/auth/profile', authenticate, async (req, res) => {
           createdAt: new Date()
         };
         inMemoryDB.users.push(user);
+        saveLocalDB();
       }
       return res.json(user);
     }
