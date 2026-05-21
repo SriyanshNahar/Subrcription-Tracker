@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Unified Subscription Tracker Workspace",
   "scripts": {
-    "install:backend": "npm install --prefix backend",
-    "install:frontend": "npm install --prefix frontend --legacy-peer-deps",
+    "install:backend": "npm ci --prefix backend",
+    "install:frontend": "npm ci --prefix frontend --legacy-peer-deps",
     "build:frontend": "npm run build --prefix frontend",
     "build": "npm run install:backend && npm run install:frontend && npm run build:frontend",
     "start": "node backend/index.js"
