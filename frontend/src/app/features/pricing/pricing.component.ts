@@ -79,7 +79,7 @@ declare var Razorpay: any;
             <div class="h-px bg-white/5 w-full mb-6"></div>
             <ul class="space-y-4 text-sm text-gray-300 mb-8">
               <li class="flex items-center space-x-3">
-                <span class="text-primary font-bold">✓</span> <span>Track up to 5 subscriptions</span>
+                <span class="text-primary font-bold">✓</span> <span>Track up to 3 subscriptions</span>
               </li>
               <li class="flex items-center space-x-3">
                 <span class="text-primary font-bold">✓</span> <span>Basic dashboard spend analysis</span>
@@ -126,7 +126,7 @@ declare var Razorpay: any;
             <div class="h-px bg-white/5 w-full mb-6"></div>
             <ul class="space-y-4 text-sm text-gray-300 mb-8">
               <li class="flex items-center space-x-3">
-                <span class="text-accent font-bold">✓</span> <span><strong>Unlimited</strong> subscriptions</span>
+                <span class="text-accent font-bold">✓</span> <span>Track up to <strong>15 subscriptions</strong></span>
               </li>
               <li class="flex items-center space-x-3">
                 <span class="text-accent font-bold">✓</span> <span>Custom Alerts (7d, 3d, 1d, and renew day)</span>
@@ -175,6 +175,9 @@ declare var Razorpay: any;
             <div *ngIf="selectedBilling === 'monthly'" class="h-6 mb-6"></div>
             <div class="h-px bg-white/5 w-full mb-6"></div>
             <ul class="space-y-4 text-sm text-gray-300 mb-8">
+              <li class="flex items-center space-x-3">
+                <span class="text-emerald-400 font-bold">✓</span> <span><strong>Unlimited</strong> subscriptions tracking</span>
+              </li>
               <li class="flex items-center space-x-3">
                 <span class="text-emerald-400 font-bold">✓</span> <span><strong>Everything</strong> in Pro included</span>
               </li>

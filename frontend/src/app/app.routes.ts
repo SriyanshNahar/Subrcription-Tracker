@@ -22,7 +22,7 @@ export const routes: Routes = [
   },
   {
     path: 'graveyard',
-    canActivate: [authGuard, planGuard],
+    canActivate: [authGuard],
     loadComponent: () => import('./features/graveyard/graveyard.component').then(m => m.GraveyardComponent)
   },
   {

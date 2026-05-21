@@ -1,4 +1,6 @@
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
@@ -29,8 +31,27 @@ let db;
 let dbType = 'memory';
 
 try {
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-    let keyRaw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY.trim();
+  let keyRaw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
+  if (!keyRaw) {
+    // Try to auto-detect pasted raw JSON inside .env file (self-healing fallback)
+    try {
+      const envPath = path.join(__dirname, '.env');
+      if (fs.existsSync(envPath)) {
+        const envContent = fs.readFileSync(envPath, 'utf8');
+        const jsonMatch = envContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          keyRaw = jsonMatch[0].trim();
+          console.log('💡 AUTO-DETECT: Found pasted Firebase Service Account JSON inside .env file!');
+        }
+      }
+    } catch (e) {
+      // Ignore env read error
+    }
+  }
+
+  if (keyRaw) {
+    keyRaw = keyRaw.trim();
     
     // Strip external surrounding quotes if added by environment variable parsers
     if (keyRaw.startsWith('"') && keyRaw.endsWith('"')) {
@@ -55,6 +76,33 @@ try {
     keyRaw = keyRaw.replace(/\\(?!["\\\/bfnrtu])/g, '\\\\');
 
     const serviceAccount = JSON.parse(keyRaw);
+    
+    // Robust Key Healing: Format PEM private key to eliminate any corrupt spacing, escaping or formatting issues
+    if (serviceAccount.private_key) {
+      let pk = serviceAccount.private_key;
+      // Replace any double-escaped newlines or single-escaped newlines
+      pk = pk.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+      pk = pk.trim().replace(/^['"]|['"]$/g, '');
+      
+      const header = '-----BEGIN PRIVATE KEY-----';
+      const footer = '-----END PRIVATE KEY-----';
+      
+      if (pk.includes(header) && pk.includes(footer)) {
+        const body = pk
+          .replace(header, '')
+          .replace(footer, '')
+          .replace(/\s+/g, ''); // strip all whitespace, newlines, tabs
+        
+        const lines = [];
+        for (let i = 0; i < body.length; i += 64) {
+          lines.push(body.substring(i, i + 64));
+        }
+        pk = `${header}\n${lines.join('\n')}\n${footer}\n`;
+      } else {
+        pk = pk.replace(/\n/g, '\n');
+      }
+      serviceAccount.private_key = pk;
+    }
     
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
@@ -266,22 +314,27 @@ app.post('/api/subscriptions', authenticate, async (req, res) => {
       }
     }
 
-    // 2. If free, check if they already have 5 or more subscriptions
-    if (userPlan === 'free') {
-      let subsCount = 0;
-      if (dbType === 'firestore') {
-        const snapshot = await db.collection('subscriptions').where('userId', '==', req.user.id).get();
-        subsCount = snapshot.size;
-      } else {
-        subsCount = inMemoryDB.subscriptions.filter(s => s.userId === req.user.id).length;
-      }
-
-      if (subsCount >= 5) {
-        return res.status(403).json({
-          error: 'Free plan limit reached (max 5 subscriptions). Please upgrade to Pro or Family for unlimited subscriptions!'
-        });
-      }
+    // 2. Enforce subscription tier limits (Free: 3, Pro: 15, Family: Unlimited)
+    let subsCount = 0;
+    if (dbType === 'firestore') {
+      const snapshot = await db.collection('subscriptions').where('userId', '==', req.user.id).get();
+      subsCount = snapshot.size;
+    } else {
+      subsCount = inMemoryDB.subscriptions.filter(s => s.userId === req.user.id).length;
     }
+
+    if (userPlan === 'free' && subsCount >= 3) {
+      return res.status(403).json({
+        error: 'Starter Free plan limit reached (max 3 subscriptions). Please upgrade to Premium Pro (15) or Shared Family for unlimited tracking!'
+      });
+    }
+
+    if (userPlan === 'pro' && subsCount >= 15) {
+      return res.status(403).json({
+        error: 'Premium Pro plan limit reached (max 15 subscriptions). Please upgrade to Shared Family for unlimited tracking!'
+      });
+    }
+
 
     // 3. Save subscription
     if (dbType === 'firestore') {
@@ -651,7 +704,6 @@ cron.schedule('0 9 * * *', () => {
 });
 
 // --- SERVE STATIC FRONTEND IN PRODUCTION ---
-const path = require('path');
 const frontendPath = path.join(__dirname, '../frontend/dist/frontend/browser');
 app.use(express.static(frontendPath));
 

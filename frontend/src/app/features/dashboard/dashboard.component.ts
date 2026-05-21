@@ -66,8 +66,10 @@ Chart.register(...registerables);
             <div class="px-6 py-4 border-b border-gray-800 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div class="flex items-center space-x-3">
                 <h2 class="text-xl font-semibold">Your Subscriptions</h2>
-                <span class="text-xs text-gray-500" *ngIf="activeUserPlan === 'free'">
-                  {{ subscriptions.length }} / 5 used
+                <span class="text-xs text-gray-500">
+                  <span *ngIf="activeUserPlan === 'free'">{{ subscriptions.length }} / 3 used</span>
+                  <span *ngIf="activeUserPlan === 'pro'">{{ subscriptions.length }} / 15 used</span>
+                  <span *ngIf="activeUserPlan === 'family'">{{ subscriptions.length }} used (Unlimited)</span>
                 </span>
               </div>
               
@@ -423,8 +425,9 @@ export class DashboardComponent implements OnInit {
   }
 
   openAddModal() {
-    if (this.activeUserPlan === 'free' && this.subscriptions.length >= 5) {
-      this.toastr.warning('Starter Free plan is limited to 5 subscriptions. Upgrade to Pro for unlimited!', 'Limit Reached!');
+    const limit = this.activeUserPlan === 'free' ? 3 : (this.activeUserPlan === 'pro' ? 15 : Infinity);
+    if (this.subscriptions.length >= limit) {
+      this.toastr.warning(`Your ${this.activeUserPlan === 'free' ? 'Starter Free' : 'Premium Pro'} plan is limited to ${limit} subscriptions. Please upgrade to a higher tier!`, 'Limit Reached!');
       this.router.navigate(['/pricing']);
       return;
     }
@@ -433,11 +436,13 @@ export class DashboardComponent implements OnInit {
 
   onSubmit() {
     if (this.subForm.valid) {
-      if (this.activeUserPlan === 'free' && this.subscriptions.length >= 5) {
-        this.toastr.warning('Starter Free plan is limited to 5 subscriptions. Upgrade to Pro for unlimited!', 'Limit Reached!');
+      const limit = this.activeUserPlan === 'free' ? 3 : (this.activeUserPlan === 'pro' ? 15 : Infinity);
+      if (this.subscriptions.length >= limit) {
+        this.toastr.warning(`Your ${this.activeUserPlan === 'free' ? 'Starter Free' : 'Premium Pro'} plan is limited to ${limit} subscriptions. Please upgrade to a higher tier!`, 'Limit Reached!');
         this.router.navigate(['/pricing']);
         return;
       }
+
 
       const data = { ...this.subForm.value };
       // auto calc renewal date
