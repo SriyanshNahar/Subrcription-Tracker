@@ -7,6 +7,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/png" href="favicon.png">
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script>
+    // Disable right-click context menu
+    document.addEventListener('contextmenu', function (e) {
+      e.preventDefault();
+    }, false);
+
+    // Disable keystrokes for developer tools
+    document.addEventListener('keydown', function (e) {
+      // F12 key
+      if (e.keyCode === 123) {
+        e.preventDefault();
+        return false;
+      }
+      
+      // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C (Inspect elements)
+      if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) {
+        e.preventDefault();
+        return false;
+      }
+
+      // Ctrl+U (View Source)
+      if (e.ctrlKey && e.keyCode === 85) {
+        e.preventDefault();
+        return false;
+      }
+
+      // Ctrl+S (Save Page)
+      if (e.ctrlKey && e.keyCode === 83) {
+        e.preventDefault();
+        return false;
+      }
+    }, false);
+
+    // Override console output APIs in production to prevent reverse-engineering of system logs
+    (function () {
+      const emptyFunc = function () {};
+      const devHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      
+      if (!devHost) {
+        window.console.log = emptyFunc;
+        window.console.info = emptyFunc;
+        window.console.warn = emptyFunc;
+        window.console.debug = emptyFunc;
+        window.console.error = emptyFunc;
+        
+        // Continuously clear the console
+        setInterval(function () {
+          console.clear();
+        }, 1000);
+      }
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>
