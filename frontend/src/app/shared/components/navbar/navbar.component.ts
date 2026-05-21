@@ -21,10 +21,10 @@ import { AuthService } from '../../../core/services/auth.service';
             <!-- Theme Dropdown Switcher -->
             <div class="relative inline-block text-left">
               <select [value]="activeTheme" (change)="onThemeChange($event)" class="bg-black/35 border border-white/10 rounded-xl px-2.5 py-1 text-xs text-gray-300 focus:outline-none focus:border-primary cursor-pointer hover:border-white/20 transition-all font-semibold">
-                <option value="theme-midnight">🌌 Midnight Cyberpunk (Recommended)</option>
+                <option value="theme-light">☀️ Light Oasis (White Theme) (Recommended)</option>
+                <option value="theme-midnight">🌌 Midnight Cyberpunk</option>
                 <option value="theme-volcanic">🌋 Volcanic Amber</option>
                 <option value="theme-forest">🌲 Forest Emerald</option>
-                <option value="theme-light">☀️ Light Oasis (White Theme)</option>
               </select>
             </div>
 
@@ -158,10 +158,10 @@ import { AuthService } from '../../../core/services/auth.service';
             <!-- Theme Dropdown Switcher -->
             <div class="relative inline-block text-left mr-1">
               <select [value]="activeTheme" (change)="onThemeChange($event)" class="bg-black/35 border border-white/10 rounded-xl px-2 py-0.5 text-[11px] text-gray-300 focus:outline-none focus:border-primary cursor-pointer font-semibold">
-                <option value="theme-midnight">🌌 Midnight (Recommended)</option>
+                <option value="theme-light">☀️ Light Oasis (Recommended)</option>
+                <option value="theme-midnight">🌌 Midnight</option>
                 <option value="theme-volcanic">🌋 Volcanic</option>
                 <option value="theme-forest">🌲 Forest</option>
-                <option value="theme-light">☀️ Light Oasis</option>
               </select>
             </div>
 
@@ -407,7 +407,7 @@ import { AuthService } from '../../../core/services/auth.service';
   `
 })
 export class NavbarComponent implements OnInit {
-  activeTheme = 'theme-midnight';
+  activeTheme = 'theme-light';
   showPlanModal = false;
   isMobileMenuOpen = false;
   isProfileDropdownOpen = false;
@@ -419,7 +419,7 @@ export class NavbarComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.activeTheme = localStorage.getItem('subtrackr_theme') || 'theme-midnight';
+    this.activeTheme = localStorage.getItem('subtrackr_theme') || 'theme-light';
   }
 
   @HostListener('document:click', ['$event'])

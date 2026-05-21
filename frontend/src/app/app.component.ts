@@ -19,7 +19,7 @@ export class AppComponent implements OnInit {
   title = 'frontend';
 
   ngOnInit() {
-    const savedTheme = localStorage.getItem('subtrackr_theme') || 'theme-midnight';
+    const savedTheme = localStorage.getItem('subtrackr_theme') || 'theme-light';
     const body = document.body;
     body.classList.remove('theme-midnight', 'theme-volcanic', 'theme-forest', 'theme-light');
     body.classList.add(savedTheme);
