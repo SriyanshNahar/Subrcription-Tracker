@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { ToastrService } from 'ngx-toastr';
+import { SeoService } from '../../core/services/seo.service';
 
 @Component({
   selector: 'app-graveyard',
@@ -47,10 +48,16 @@ export class GraveyardComponent implements OnInit {
 
   constructor(
     private subService: SubscriptionService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private seo: SeoService
   ) {}
 
   ngOnInit() {
+    this.seo.generateTags({
+      title: 'Expense Graveyard',
+      description: 'Audit your cancelled digital plans and celebrate your monthly/yearly savings. Turn digital wastage into financial victory with the SubTrackr Graveyard.'
+    });
+
     this.subService.getGraveyard().subscribe({
       next: (res: any) => this.data = res,
       error: () => this.toastr.error('Failed to load graveyard data')

@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { SeoService } from '../../core/services/seo.service';
 
 @Component({
   selector: 'app-terms',
@@ -110,4 +111,13 @@ import { RouterModule } from '@angular/router';
     </div>
   `
 })
-export class TermsComponent {}
+export class TermsComponent implements OnInit {
+  constructor(private seo: SeoService) {}
+
+  ngOnInit() {
+    this.seo.generateTags({
+      title: 'Terms of Service',
+      description: 'Review the terms of service governing the usage of SubTrackr. Learn about data ownership, account rules, and liability disclaimers.'
+    });
+  }
+}

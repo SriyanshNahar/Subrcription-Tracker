@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -6,6 +6,7 @@ import { ReCaptchaV3Service } from 'ng-recaptcha';
 import { AuthService } from '../../../core/services/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
+import { SeoService } from '../../../core/services/seo.service';
 
 @Component({
   selector: 'app-login',
@@ -210,7 +211,7 @@ import { ToastrService } from 'ngx-toastr';
     </div>
   `
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   email = '';
   password = '';
   isLoading = false;
@@ -221,8 +222,16 @@ export class LoginComponent {
     private recaptchaV3Service: ReCaptchaV3Service,
     private authService: AuthService,
     private http: HttpClient,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private seo: SeoService
   ) {}
+
+  ngOnInit() {
+    this.seo.generateTags({
+      title: 'Secure Account Access',
+      description: 'Sign in to SubTrackr to access your dashboard, monitor active digital subscriptions, and avoid upcoming renewals with push reminders.'
+    });
+  }
 
   async onGoogleLogin(): Promise<void> {
     this.isLoading = true;

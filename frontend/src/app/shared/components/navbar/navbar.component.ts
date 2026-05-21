@@ -156,9 +156,9 @@ import { AuthService } from '../../../core/services/auth.service';
           <!-- Mobile Right Section: Theme Selector + Hamburger Toggle -->
           <div class="flex items-center space-x-3 lg:hidden">
             <!-- Theme Dropdown Switcher -->
-            <div class="relative inline-block text-left mr-1">
-              <select [value]="activeTheme" (change)="onThemeChange($event)" class="bg-black/35 border border-white/10 rounded-xl px-2 py-0.5 text-[11px] text-gray-300 focus:outline-none focus:border-primary cursor-pointer font-semibold">
-                <option value="theme-light">☀️ Light Oasis (Recommended)</option>
+            <div class="relative inline-block text-left mr-1 max-w-[105px] sm:max-w-none">
+              <select [value]="activeTheme" (change)="onThemeChange($event)" class="w-full bg-black/35 border border-white/10 rounded-xl px-2 py-0.5 text-[11px] text-gray-300 focus:outline-none focus:border-primary cursor-pointer font-semibold">
+                <option value="theme-light">☀️ Light</option>
                 <option value="theme-midnight">🌌 Midnight</option>
                 <option value="theme-volcanic">🌋 Volcanic</option>
                 <option value="theme-forest">🌲 Forest</option>

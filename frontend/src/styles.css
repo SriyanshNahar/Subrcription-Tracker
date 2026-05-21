@@ -4,9 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
-:root, .theme-midnight {
+:root,
+.theme-midnight {
   --color-bg: #0A0A18;
-  --color-card: #121226;
+  --color-card: #ffff;
   --color-card-rgb: 18, 18, 38;
   --color-primary: #6C63FF;
   --color-accent: #00D4AA;
@@ -78,18 +79,18 @@ body.theme-light .border-gray-800,
 body.theme-light .border-gray-700\/60,
 body.theme-light .border-gray-700\/50,
 body.theme-light .border-gray-700,
-body.theme-light .divide-gray-800 > *,
-body.theme-light .divide-white\/5 > *,
-body.theme-light .divide-white\/10 > * {
+body.theme-light .divide-gray-800>*,
+body.theme-light .divide-white\/5>*,
+body.theme-light .divide-white\/10>* {
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
 body.theme-light input,
 body.theme-light select,
 body.theme-light textarea,
-body.theme-light .bg-[#080810]\/80,
-body.theme-light .bg-[#090915],
-body.theme-light .bg-[#0F0F24]\/90 {
+body.theme-light .bg-\[\#080810\]\/80,
+body.theme-light .bg-\[\#090915\],
+body.theme-light .bg-\[\#0F0F24\]\/90 {
   background-color: #FFFFFF !important;
   color: #0F172A !important;
   border-color: rgba(0, 0, 0, 0.12) !important;
@@ -120,7 +121,7 @@ body.theme-light .bg-slate-600 {
 }
 
 body.theme-light [class*="bg-[linear-gradient(rgba(255,255,255"] {
-  background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px) !important;
+  background-image: linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px) !important;
   opacity: 0.8 !important;
 }
 
@@ -140,6 +141,7 @@ body.theme-light .text-accent {
 body.theme-light .text-red-500\/80 {
   color: #DC2626 !important;
 }
+
 body.theme-light .text-gray-500\/80 {
   color: #64748B !important;
 }
@@ -149,7 +151,7 @@ body.theme-light .hover\:text-white:hover {
   color: var(--color-primary) !important;
 }
 
-body.theme-light .bg-[#000000]\/40 {
+body.theme-light .bg-\[\#000000\]\/40 {
   background-color: rgba(0, 0, 0, 0.03) !important;
   border-color: rgba(0, 0, 0, 0.06) !important;
 }
@@ -173,6 +175,7 @@ body {
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -184,6 +187,7 @@ body {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -197,4 +201,3 @@ body {
 .animate-slide-down {
   animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-

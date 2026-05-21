@@ -7,6 +7,7 @@ import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import { AuthService } from '../../core/services/auth.service';
 import { Router, RouterModule } from '@angular/router';
+import { SeoService } from '../../core/services/seo.service';
 
 Chart.register(...registerables);
 
@@ -103,14 +104,14 @@ Chart.register(...registerables);
             </div>
             
             <div class="divide-y divide-gray-800">
-              <div *ngFor="let sub of filteredSubscriptions" class="p-6 flex items-center justify-between hover:bg-white/5 transition-colors">
+              <div *ngFor="let sub of filteredSubscriptions" class="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors">
                 <div class="flex items-center space-x-4">
-                  <div class="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center text-xl overflow-hidden">
+                  <div class="w-12 h-12 flex-shrink-0 bg-gray-800 rounded-xl flex items-center justify-center text-xl overflow-hidden">
                     <img *ngIf="sub.logo" [src]="getLogoUrl(sub)" (error)="sub.logo = null" alt="logo" class="w-full h-full object-cover">
                     <span *ngIf="!sub.logo">{{ sub.name.charAt(0) }}</span>
                   </div>
                   <div>
-                    <h3 class="text-lg font-medium text-white flex items-center space-x-2">
+                    <h3 class="text-base sm:text-lg font-medium text-white flex flex-wrap items-center gap-2">
                       <span>{{ sub.name }}</span>
                       <span *ngIf="sub.status === 'Want to Cancel'" class="bg-amber-500/10 text-amber-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-amber-500/25">
                         Want to Cancel
@@ -119,13 +120,13 @@ Chart.register(...registerables);
                         Inactive 🪦
                       </span>
                     </h3>
-                    <p class="text-sm text-gray-400">{{ sub.category }} • Renews {{ sub.renewalDate | date:'mediumDate' }}</p>
+                    <p class="text-xs sm:text-sm text-gray-400">{{ sub.category }} • Renews {{ sub.renewalDate | date:'mediumDate' }}</p>
                   </div>
                 </div>
-                <div class="text-right flex items-center space-x-4">
-                  <div>
-                    <p class="text-lg font-bold text-white">{{ sub.amount | currency:sub.currency || 'INR' }}</p>
-                    <p class="text-sm text-gray-400">/ {{ sub.billingCycle }}</p>
+                <div class="flex items-center justify-between sm:justify-end space-x-4 border-t border-gray-800/50 sm:border-t-0 pt-3 sm:pt-0">
+                  <div class="text-left sm:text-right">
+                    <p class="text-base sm:text-lg font-bold text-white">{{ sub.amount | currency:sub.currency || 'INR' }}</p>
+                    <p class="text-xs sm:text-sm text-gray-400">/ {{ sub.billingCycle }}</p>
                   </div>
                   <div class="flex items-center space-x-2">
                     <button *ngIf="sub.status !== 'Inactive'" (click)="openCancelAssistant(sub)" class="text-amber-500 hover:text-amber-400 p-2" title="Cancel Assistant">
@@ -345,7 +346,8 @@ export class DashboardComponent implements OnInit {
     private fb: FormBuilder,
     private toastr: ToastrService,
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    private seo: SeoService
   ) {
     this.subForm = this.fb.group({
       name: ['', Validators.required],
@@ -359,6 +361,10 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.seo.generateTags({
+      title: 'Premium Analytics Dashboard',
+      description: 'Optimize your digital spending in one elegant visual hub. Track active subscriptions, renewals, category spend, and reclaim wasted money with SubTrackr.'
+    });
     this.loadData();
     this.auth.userProfile$.subscribe(profile => {
       if (profile) {

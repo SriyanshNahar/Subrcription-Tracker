@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { SeoService } from '../../core/services/seo.service';
 
 @Component({
   selector: 'app-privacy',
@@ -110,4 +111,13 @@ import { RouterModule } from '@angular/router';
     </div>
   `
 })
-export class PrivacyComponent {}
+export class PrivacyComponent implements OnInit {
+  constructor(private seo: SeoService) {}
+
+  ngOnInit() {
+    this.seo.generateTags({
+      title: 'Privacy Policy',
+      description: 'Learn how SubTrackr protects your credentials and digital subscription metrics. Your financial privacy is our highest priority.'
+    });
+  }
+}

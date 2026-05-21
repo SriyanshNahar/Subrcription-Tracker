@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -6,6 +6,7 @@ import { ReCaptchaV3Service } from 'ng-recaptcha';
 import { AuthService } from '../../../core/services/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
+import { SeoService } from '../../../core/services/seo.service';
 
 @Component({
   selector: 'app-register',
@@ -37,6 +38,18 @@ import { ToastrService } from 'ngx-toastr';
             <!-- Alerts -->
             <div *ngIf="errorMessage" class="bg-red-950/20 border border-red-500/30 text-red-400 rounded-xl p-3 mb-6 text-sm">
               {{ errorMessage }}
+            </div>
+
+            <!-- Email Verification Spam Folder Disclaimer Alert -->
+            <div *ngIf="verificationSent" class="bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs rounded-2xl p-4.5 mb-6 flex flex-col gap-2 shadow-lg backdrop-blur-md">
+              <div class="flex items-center gap-2 text-amber-400 font-bold">
+                <span>✉️</span>
+                <span>Check your inbox & spam folder!</span>
+              </div>
+              <p class="leading-relaxed text-gray-300">
+                We have sent an email verification link to <strong class="text-white">{{ email }}</strong>. 
+                <span class="font-extrabold text-amber-400">Important:</span> If you do not see it in your Inbox, please check your Gmail/Email <strong class="text-white">Spam or Junk folder</strong> and mark it as "Not Spam".
+              </p>
             </div>
 
             <!-- GOOGLE LOGIN BUTTON -->
@@ -210,19 +223,28 @@ import { ToastrService } from 'ngx-toastr';
     </div>
   `
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   name = '';
   email = '';
   password = '';
   isLoading = false;
   errorMessage = '';
+  verificationSent = false;
 
   constructor(
     private recaptchaV3Service: ReCaptchaV3Service,
     private authService: AuthService,
     private http: HttpClient,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private seo: SeoService
   ) {}
+
+  ngOnInit() {
+    this.seo.generateTags({
+      title: 'Create Free Account',
+      description: 'Join SubTrackr today. Reclaim control of your digital subscriptions, get push alerts for upcoming renewals, and prevent hidden price hikes.'
+    });
+  }
 
   async onGoogleLogin(): Promise<void> {
     this.isLoading = true;
@@ -245,6 +267,7 @@ export class RegisterComponent {
 
     this.isLoading = true;
     this.errorMessage = '';
+    this.verificationSent = false;
 
     try {
       const token = await this.recaptchaV3Service.execute('signup').toPromise();
@@ -258,6 +281,7 @@ export class RegisterComponent {
 
       await this.authService.signupWithEmail(this.email, this.password, this.name);
       this.toastr.success('Verification email sent!');
+      this.verificationSent = true;
     } catch (error: any) {
       this.errorMessage = error.message;
       this.toastr.error(error.message);

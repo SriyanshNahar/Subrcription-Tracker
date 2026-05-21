@@ -5,6 +5,7 @@ import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastrService } from 'ngx-toastr';
 import { environment } from '../../../environments/environment';
+import { SeoService } from '../../core/services/seo.service';
 
 declare var Razorpay: any;
 
@@ -64,7 +65,7 @@ declare var Razorpay: any;
       </div>
  
       <!-- Plans grid -->
-      <div class="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-8 z-10 px-2">
+      <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8 z-10 px-2">
  
         <!-- FREE PLAN CARD -->
         <div class="glass-card p-8 flex flex-col justify-between border border-white/5 hover:border-white/10 hover:scale-[1.02] hover:shadow-[0_10px_35px_rgba(255,255,255,0.03)] transition-all duration-300 group">
@@ -236,10 +237,16 @@ export class PricingComponent implements OnInit {
     private auth: AuthService,
     private route: ActivatedRoute,
     private router: Router,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private seo: SeoService
   ) {}
 
   ngOnInit() {
+    this.seo.generateTags({
+      title: 'Premium Savings & Pricing Plans',
+      description: 'Select a premium pricing tier tailored to your budget. Maximize monthly savings, analyze multi-currency subscriptions, and track up to unlimited digital tools.'
+    });
+
     // Check if query parameters show an upgrade requirement
     this.route.queryParams.subscribe(params => {
       this.upgradeRequired = params['reason'] === 'upgrade_required';

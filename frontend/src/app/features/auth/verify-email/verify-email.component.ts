@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { SeoService } from '../../../core/services/seo.service';
 
 @Component({
   selector: 'app-verify-email',
@@ -12,7 +13,7 @@ import { AuthService } from '../../../core/services/auth.service';
       <div class="glass-card rounded-2xl p-8 w-full max-w-md text-center">
 
         <div class="text-6xl mb-4">📧</div>
-        <h2 class="text-white text-xl font-bold mb-2">Check your inbox!</h2>
+        <h1 class="text-white text-xl font-bold mb-2">Verify Your Email Address</h1>
         <p class="text-gray-400 text-sm mb-6">
           We sent a verification link to your email.<br>
           Click the link to activate your account.
@@ -41,11 +42,21 @@ import { AuthService } from '../../../core/services/auth.service';
     </div>
   `
 })
-export class VerifyEmailComponent {
+export class VerifyEmailComponent implements OnInit {
   isResending = false;
   resendSuccess = false;
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private seo: SeoService
+  ) {}
+
+  ngOnInit() {
+    this.seo.generateTags({
+      title: 'Verify Your Email Address',
+      description: 'A verification link has been dispatched to your signup email. Verify your identity to activate your SubTrackr expense tracker dashboard.'
+    });
+  }
 
   async resendEmail(): Promise<void> {
     this.isResending = true;
