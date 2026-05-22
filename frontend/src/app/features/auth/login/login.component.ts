@@ -160,22 +160,22 @@ import { SeoService } from '../../../core/services/seo.service';
               <!-- Animated Chart Bars -->
               <div class="grid grid-cols-6 gap-2 pt-4 items-end h-24">
                 <div class="bg-white/5 rounded-t-lg h-12 w-full transition-all duration-500 hover:bg-primary/50 relative group">
-                  <span class="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-900 text-[10px] text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition duration-200">Netflix</span>
+                  <span class="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-900 text-[10px] text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition duration-200" style="color: #ffffff !important;">Netflix</span>
                 </div>
                 <div class="bg-white/5 rounded-t-lg h-16 w-full transition-all duration-500 hover:bg-primary/50 relative group">
-                  <span class="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-900 text-[10px] text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition duration-200">Spotify</span>
+                  <span class="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-900 text-[10px] text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition duration-200" style="color: #ffffff !important;">Spotify</span>
                 </div>
                 <div class="bg-primary rounded-t-lg h-20 w-full transition-all duration-500 hover:bg-opacity-80 relative group">
-                  <span class="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-900 text-[10px] text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition duration-200">Github</span>
+                  <span class="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-900 text-[10px] text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition duration-200" style="color: #ffffff !important;">Github</span>
                 </div>
                 <div class="bg-white/5 rounded-t-lg h-8 w-full transition-all duration-500 hover:bg-accent/50 relative group">
-                  <span class="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-900 text-[10px] text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition duration-200">Notion</span>
+                  <span class="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-900 text-[10px] text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition duration-200" style="color: #ffffff !important;">Notion</span>
                 </div>
                 <div class="bg-accent rounded-t-lg h-14 w-full transition-all duration-500 hover:bg-opacity-80 relative group">
-                  <span class="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-900 text-[10px] text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition duration-200">Figma</span>
+                  <span class="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-900 text-[10px] text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition duration-200" style="color: #ffffff !important;">Figma</span>
                 </div>
                 <div class="bg-white/5 rounded-t-lg h-10 w-full transition-all duration-500 hover:bg-primary/50 relative group">
-                  <span class="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-900 text-[10px] text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition duration-200">ChatGPT</span>
+                  <span class="absolute -top-7 left-1/2 -translate-x-1/2 bg-gray-900 text-[10px] text-white px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition duration-200" style="color: #ffffff !important;">ChatGPT</span>
                 </div>
               </div>
 
