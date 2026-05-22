@@ -7,6 +7,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
 import { SeoService } from '../../../core/services/seo.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -262,7 +263,7 @@ export class LoginComponent implements OnInit {
       const token = await this.recaptchaV3Service.execute('login').toPromise();
 
       // 2. Verify token on backend
-      const captchaResult: any = await this.http.post('http://127.0.0.1:5000/api/auth/verify-captcha', { token }).toPromise();
+      const captchaResult: any = await this.http.post(`${environment.apiUrl}/api/auth/verify-captcha`, { token }).toPromise();
 
       // 3. Check score (0.5+ = human, below = bot)
       if (captchaResult.score < 0.5) {

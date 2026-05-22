@@ -29,6 +29,7 @@ const razorpay = new Razorpay({
 // Initialize Firebase Admin
 let db;
 let dbType = 'memory';
+let dbInitError = null;
 
 try {
   let keyRaw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
@@ -53,6 +54,19 @@ try {
   if (keyRaw) {
     keyRaw = keyRaw.trim();
     
+    // Support Base64 Encoded keys to bypass environment variable escaping hurdles
+    if (keyRaw.match(/^[A-Za-z0-9+/=]+$/) && !keyRaw.startsWith('{')) {
+      try {
+        const decoded = Buffer.from(keyRaw, 'base64').toString('utf8');
+        if (decoded.trim().startsWith('{')) {
+          keyRaw = decoded.trim();
+          console.log('💡 AUTO-DECODE: Successfully decoded Base64-encoded Firebase Service Account Key!');
+        }
+      } catch (err) {
+        console.warn('⚠️ Base64 decode check failed, treating key as raw string.', err.message);
+      }
+    }
+
     // Strip external surrounding quotes if added by environment variable parsers
     if (keyRaw.startsWith('"') && keyRaw.endsWith('"')) {
       keyRaw = keyRaw.slice(1, -1);
@@ -75,7 +89,19 @@ try {
     // to prevent JSON.parse from throwing "Bad escaped character" errors.
     keyRaw = keyRaw.replace(/\\(?!["\\\/bfnrtu])/g, '\\\\');
 
-    const serviceAccount = JSON.parse(keyRaw);
+    let serviceAccount;
+    try {
+      serviceAccount = JSON.parse(keyRaw);
+    } catch (parseError) {
+      // If parsing failed, try healing double escaped backslashes and quotes
+      try {
+        const healedKey = keyRaw.replace(/\\\\n/g, '\\n').replace(/\\"/g, '"');
+        serviceAccount = JSON.parse(healedKey);
+        console.log('💡 JSON HEALED: Successfully parsed healed service account JSON.');
+      } catch (nestedError) {
+        throw new Error(`JSON.parse failed: ${parseError.message}. Direct parse error: ${nestedError.message}`);
+      }
+    }
     
     // Robust Key Healing: Format PEM private key to eliminate any corrupt spacing, escaping or formatting issues
     if (serviceAccount.private_key) {
@@ -114,7 +140,9 @@ try {
     throw new Error('No FIREBASE_SERVICE_ACCOUNT_KEY provided in environment variables.');
   }
 } catch (error) {
+  dbInitError = error.message;
   console.error('⚠️ DATABASE FALLBACK: Falling back to in-memory database due to error:', error.message);
+  console.error(error.stack);
   console.log('💡 TIP: If this is production (Render), verify that FIREBASE_SERVICE_ACCOUNT_KEY is valid JSON.');
   dbType = 'memory';
 }
@@ -786,6 +814,19 @@ cron.schedule('0 9 * * *', () => {
 // --- SERVE STATIC FRONTEND IN PRODUCTION ---
 const frontendPath = path.join(__dirname, '../frontend/dist/frontend/browser');
 app.use(express.static(frontendPath));
+
+// --- SYSTEM DIAGNOSTICS ---
+app.get('/api/system/status', (req, res) => {
+  res.json({
+    dbType: dbType,
+    status: dbType === 'firestore' ? 'healthy' : 'warning',
+    message: dbType === 'firestore' 
+      ? 'Connected to Google Firestore. Data is persistent.' 
+      : 'Running in ephemeral in-memory mode. Data will be lost on server restart or redeploy.',
+    firebaseProjectId: dbType === 'firestore' ? (db?.projectId || 'subtrackr-b11eb') : null,
+    dbInitError: dbInitError
+  });
+});
 
 // Fallback all client-side routes to Angular index.html (SPA routing)
 app.get('/*splat', (req, res, next) => {

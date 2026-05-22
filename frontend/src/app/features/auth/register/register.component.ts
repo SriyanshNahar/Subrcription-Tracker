@@ -7,6 +7,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
 import { SeoService } from '../../../core/services/seo.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-register',
@@ -271,7 +272,7 @@ export class RegisterComponent implements OnInit {
 
     try {
       const token = await this.recaptchaV3Service.execute('signup').toPromise();
-      const captchaResult: any = await this.http.post('http://127.0.0.1:5000/api/auth/verify-captcha', { token }).toPromise();
+      const captchaResult: any = await this.http.post(`${environment.apiUrl}/api/auth/verify-captcha`, { token }).toPromise();
 
       if (captchaResult.score < 0.5) {
         this.errorMessage = 'Bot activity detected. Please try again.';

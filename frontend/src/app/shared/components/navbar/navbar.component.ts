@@ -2,6 +2,8 @@ import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-navbar',
@@ -11,9 +13,17 @@ import { AuthService } from '../../../core/services/auth.service';
     <nav class="fixed top-0 w-full z-50 bg-card bg-opacity-95 backdrop-blur-md border-b border-white/5 transition-all duration-300">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
-          <!-- Brand Logo -->
-          <div class="flex items-center">
+          <!-- Brand Logo & Diagnostic Badge -->
+          <div class="flex items-center space-x-3">
             <a routerLink="/" (click)="isMobileMenuOpen = false; isProfileDropdownOpen = false" class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">SubTrackr</a>
+            <span *ngIf="dbStatus && dbStatus.dbType === 'memory'" (click)="showFixModal = true" class="cursor-pointer bg-red-500/10 hover:bg-red-500/25 border border-red-500/30 text-red-400 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all shadow-sm active:scale-95">
+              <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+              <span>Ephemeral Mode</span>
+            </span>
+            <span *ngIf="dbStatus && dbStatus.dbType === 'firestore'" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all shadow-sm">
+              <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+              <span>Firestore Active</span>
+            </span>
           </div>
 
           <!-- Desktop Navigation Options (Visible on large screens) -->
@@ -404,6 +414,103 @@ import { AuthService } from '../../../core/services/auth.service';
 
       </div>
     </div>
+
+    <!-- Beautiful How to Fix Ephemeral Mode Modal -->
+    <div 
+      *ngIf="showFixModal" 
+      class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in"
+      (click)="showFixModal = false">
+      
+      <div 
+        class="glass-card max-w-lg w-full border border-white/10 p-6 shadow-2xl relative overflow-hidden text-white rounded-3xl bg-[#11111e]/95"
+        (click)="$event.stopPropagation()">
+        
+        <!-- Top Glow Gradient decoration -->
+        <div class="absolute -top-24 -left-24 w-48 h-48 bg-red-500/20 rounded-full blur-[80px] pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-amber-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-5 pb-3.5 border-b border-white/5">
+          <div class="flex items-center space-x-2">
+            <span class="text-xl">⚠️</span>
+            <h3 class="text-xl font-bold tracking-tight text-white">Database Ephemeral Warning</h3>
+          </div>
+          <button (click)="showFixModal = false" class="text-gray-400 hover:text-white transition-colors cursor-pointer p-1 rounded-lg hover:bg-white/5 border-0 bg-transparent">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Body -->
+        <div class="space-y-4">
+          <div class="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-sm text-red-200 leading-relaxed">
+            <p class="font-extrabold mb-1">Why is this warning showing?</p>
+            <p class="text-xs text-gray-300">
+              The application is currently running in <strong>temporary in-memory fallback mode</strong> because the Google Firestore cloud database credentials are not configured or failed to parse.
+            </p>
+            <p class="text-xs text-gray-300 mt-2 font-semibold text-amber-300">
+              🚨 CRITICAL: Render deletes all local files (including `database.json`) every time the server restarts, redeploys, or goes to sleep. To keep your user accounts and data permanently, you must connect Firestore.
+            </p>
+          </div>
+
+          <div *ngIf="dbStatus?.dbInitError" class="bg-black/40 border border-white/5 rounded-xl p-3 text-[11px] font-mono text-amber-300 max-h-24 overflow-y-auto">
+            <p class="font-bold text-red-400 mb-1">Initialization Error Trace:</p>
+            {{ dbStatus.dbInitError }}
+          </div>
+
+          <!-- Step by Step Setup Guide -->
+          <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400">1-Minute Permanent Fix Guide</h4>
+          
+          <div class="space-y-3 max-h-[220px] overflow-y-auto pr-1 text-xs text-gray-300 leading-relaxed font-medium font-sans">
+            <div class="flex items-start gap-2.5">
+              <span class="bg-primary/20 text-primary w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 font-sans">1</span>
+              <div>
+                <p class="text-white font-bold">Generate Firebase Key JSON</p>
+                <p class="text-gray-400">Go to <strong>Firebase Console</strong> -> Project Settings -> Service Accounts -> Click <strong>Generate New Private Key</strong>. This downloads a JSON file.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-2.5">
+              <span class="bg-primary/20 text-primary w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 font-sans">2</span>
+              <div>
+                <p class="text-white font-bold">Encode Key as Base64 (Recommended)</p>
+                <p class="text-gray-400">To avoid any quote/newline escaping issues on Render, base64 encode your JSON file content. You can run this command in terminal:</p>
+                <code class="block bg-black/40 p-2 rounded border border-white/5 font-mono text-[9px] mt-1 select-all text-accent">powershell [Convert]::ToBase64String([IO.File]::ReadAllBytes('service-account.json'))</code>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-2.5">
+              <span class="bg-primary/20 text-primary w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 font-sans">3</span>
+              <div>
+                <p class="text-white font-bold">Add Environment Variable on Render</p>
+                <p class="text-gray-400">Go to your **Render Dashboard**, find your Web Service, go to **Environment** tab, click **Add Environment Variable**:</p>
+                <div class="grid grid-cols-3 gap-2 mt-1.5 font-sans">
+                  <div class="bg-white/5 p-1.5 rounded text-[10px] font-mono text-center font-bold border border-white/5">Key</div>
+                  <div class="bg-white/5 p-1.5 rounded text-[10px] font-mono text-center font-bold border border-white/5 col-span-2">Value</div>
+                  <div class="bg-white/5 p-1.5 rounded text-[10px] font-mono text-center select-all border border-white/5 font-black text-accent shrink-0">FIREBASE_SERVICE_ACCOUNT_KEY</div>
+                  <div class="bg-white/5 p-1.5 rounded text-[10px] font-mono text-center col-span-2 truncate text-gray-400 border border-white/5">Paste the Base64 String (or raw JSON)</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-2.5">
+              <span class="bg-primary/20 text-primary w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 font-sans">4</span>
+              <div>
+                <p class="text-white font-bold">Save and Deploy!</p>
+                <p class="text-gray-400">Save changes on Render. Render will automatically redeploy. Once done, the badge next to your logo will change to a green <strong>Firestore Active</strong> badge!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-3.5 border-t border-white/5 flex justify-end">
+          <button (click)="showFixModal = false" class="bg-primary hover:bg-opacity-90 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition-all shadow-md active:scale-[0.98] cursor-pointer border-0">
+            Got it!
+          </button>
+        </div>
+      </div>
+    </div>
   `
 })
 export class NavbarComponent implements OnInit {
@@ -411,15 +518,30 @@ export class NavbarComponent implements OnInit {
   showPlanModal = false;
   isMobileMenuOpen = false;
   isProfileDropdownOpen = false;
+  dbStatus: any = null;
+  showFixModal = false;
 
   constructor(
     public auth: AuthService,
     private router: Router,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
     this.activeTheme = localStorage.getItem('subtrackr_theme') || 'theme-light';
+    this.checkDatabaseStatus();
+  }
+
+  checkDatabaseStatus() {
+    this.http.get(`${environment.apiUrl}/api/system/status`).subscribe({
+      next: (status: any) => {
+        this.dbStatus = status;
+      },
+      error: (err) => {
+        console.error('Failed to query system status:', err);
+      }
+    });
   }
 
   @HostListener('document:click', ['$event'])
