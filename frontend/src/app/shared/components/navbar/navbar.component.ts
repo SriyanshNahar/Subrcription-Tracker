@@ -50,7 +50,7 @@ import { AuthService } from '../../../core/services/auth.service';
                   
                   <!-- Display Name & Chevron -->
                   <div class="flex flex-col text-left">
-                    <span class="text-white font-bold text-sm leading-tight max-w-[120px] truncate">{{ profile.name }}</span>
+                    <span class="text-white font-bold text-sm leading-tight inline-block max-w-[120px] truncate">{{ profile.name }}</span>
                     <span class="text-gray-400 text-[10px] font-semibold uppercase tracking-wider capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : 'Free') }}</span>
                   </div>
                   
@@ -66,7 +66,7 @@ import { AuthService } from '../../../core/services/auth.service';
                 <!-- Sleek Glassmorphic Dropdown Box -->
                 <div 
                   *ngIf="isProfileDropdownOpen" 
-                  class="absolute right-0 mt-3 w-64 rounded-2xl bg-card border border-white/10 shadow-2xl backdrop-blur-xl p-4.5 z-50 animate-slide-down text-white overflow-hidden">
+                  class="absolute right-0 mt-3 w-64 rounded-2xl bg-card border border-white/10 shadow-2xl backdrop-blur-xl p-5 z-50 animate-slide-down text-white overflow-hidden">
                   <!-- Ambient Glow decoration inside dropdown -->
                   <div class="absolute -top-12 -left-12 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
                   <div class="absolute -bottom-12 -right-12 w-24 h-24 bg-accent/10 rounded-full blur-2xl pointer-events-none"></div>
