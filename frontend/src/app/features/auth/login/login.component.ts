@@ -26,7 +26,7 @@ import { environment } from '../../../../environments/environment';
         
         <!-- Left Side: Login Form -->
         <div class="flex justify-center lg:justify-end">
-          <div class="glass-card rounded-3xl p-8 md:p-10 w-full max-w-md border border-white/10 shadow-2xl relative overflow-hidden transition-all duration-300">
+          <div class="glass-card rounded-3xl p-6 sm:p-8 md:p-10 w-full max-w-md border border-white/10 shadow-2xl relative overflow-hidden transition-all duration-300">
             <!-- Glass Overlay Card Inner Glow -->
             <div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 rounded-full blur-2xl pointer-events-none"></div>
 

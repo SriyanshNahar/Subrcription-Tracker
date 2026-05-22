@@ -1,6 +1,14 @@
 export const environment = {
   production: false,
-  apiUrl: typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'http://localhost:5000' : '',
+  apiUrl: typeof window !== 'undefined'
+    ? (window.location.hostname === 'localhost' ||
+       window.location.hostname === '127.0.0.1' ||
+       window.location.hostname.startsWith('192.168.') ||
+       window.location.hostname.startsWith('10.') ||
+       window.location.hostname.startsWith('172.'))
+      ? `http://${window.location.hostname}:5000`
+      : ''
+    : '',
   firebase: {
     apiKey: "AIzaSyCdndKuPhePMvLBBMefVNP6rNfGqXZ1SZw",
     authDomain: "subtrackr-b11eb.firebaseapp.com",

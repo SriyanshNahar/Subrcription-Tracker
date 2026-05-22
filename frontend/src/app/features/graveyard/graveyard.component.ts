@@ -10,7 +10,7 @@ import { SeoService } from '../../core/services/seo.service';
   imports: [CommonModule, CurrencyPipe],
   template: `
     <div class="py-6 flex flex-col items-center justify-center min-h-[80vh]">
-      <div class="glass-card p-10 max-w-2xl w-full text-center relative overflow-hidden">
+      <div class="glass-card p-6 sm:p-10 max-w-2xl w-full text-center relative overflow-hidden">
         <!-- Decoration -->
         <div class="absolute -top-20 -right-20 w-40 h-40 bg-accent rounded-full blur-3xl opacity-20"></div>
         <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-primary rounded-full blur-3xl opacity-20"></div>

@@ -16,13 +16,13 @@ import { environment } from '../../../../environments/environment';
           <!-- Brand Logo & Diagnostic Badge -->
           <div class="flex items-center space-x-3">
             <a routerLink="/" (click)="isMobileMenuOpen = false; isProfileDropdownOpen = false" class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">SubTrackr</a>
-            <span *ngIf="dbStatus && dbStatus.dbType === 'memory'" (click)="showFixModal = true" class="cursor-pointer bg-red-500/10 hover:bg-red-500/25 border border-red-500/30 text-red-400 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all shadow-sm active:scale-95">
+            <span *ngIf="dbStatus && dbStatus.dbType === 'memory'" (click)="showFixModal = true" class="cursor-pointer bg-red-500/10 hover:bg-red-500/25 border border-red-500/30 text-red-400 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all shadow-sm active:scale-95 shrink-0">
               <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
-              <span>Ephemeral Mode</span>
+              <span>Ephemeral<span class="hidden sm:inline"> Mode</span></span>
             </span>
-            <span *ngIf="dbStatus && dbStatus.dbType === 'firestore'" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all shadow-sm">
+            <span *ngIf="dbStatus && dbStatus.dbType === 'firestore'" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all shadow-sm shrink-0">
               <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-              <span>Firestore Active</span>
+              <span>Firestore<span class="hidden sm:inline"> Active</span></span>
             </span>
           </div>
 
@@ -450,7 +450,7 @@ import { environment } from '../../../../environments/environment';
               The application is currently running in <strong>temporary in-memory fallback mode</strong> because the Google Firestore cloud database credentials are not configured or failed to parse.
             </p>
             <p class="text-xs text-gray-300 mt-2 font-semibold text-amber-300">
-              🚨 CRITICAL: Render deletes all local files (including 'database.json') every time the server restarts, redeploys, or goes to sleep. To keep your user accounts and data permanently, you must connect Firestore.
+              🚨 CRITICAL: Render deletes all local files (including <code>database.json</code>) every time the server restarts, redeploys, or goes to sleep. To keep your user accounts and data permanently, you must connect Firestore.
             </p>
           </div>
 
