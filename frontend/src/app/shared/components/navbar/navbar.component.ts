@@ -450,7 +450,7 @@ import { environment } from '../../../../environments/environment';
               The application is currently running in <strong>temporary in-memory fallback mode</strong> because the Google Firestore cloud database credentials are not configured or failed to parse.
             </p>
             <p class="text-xs text-gray-300 mt-2 font-semibold text-amber-300">
-              🚨 CRITICAL: Render deletes all local files (including `database.json`) every time the server restarts, redeploys, or goes to sleep. To keep your user accounts and data permanently, you must connect Firestore.
+              🚨 CRITICAL: Render deletes all local files (including 'database.json') every time the server restarts, redeploys, or goes to sleep. To keep your user accounts and data permanently, you must connect Firestore.
             </p>
           </div>
 
