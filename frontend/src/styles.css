@@ -201,3 +201,15 @@ body {
 .animate-slide-down {
   animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Restoring pure white legibility for dark background elements in Light Oasis theme */
+body.theme-light .bg-primary,
+body.theme-light .bg-accent,
+body.theme-light .bg-slate-600,
+body.theme-light .bg-emerald-600,
+body.theme-light .bg-emerald-700,
+body.theme-light .bg-red-500,
+body.theme-light .bg-gradient-to-r,
+body.theme-light .text-white-force {
+  color: #FFFFFF !important;
+}

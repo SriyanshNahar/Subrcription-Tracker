@@ -16,14 +16,6 @@ import { environment } from '../../../../environments/environment';
           <!-- Brand Logo & Diagnostic Badge -->
           <div class="flex items-center space-x-3">
             <a routerLink="/" (click)="isMobileMenuOpen = false; isProfileDropdownOpen = false" class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">SubTrackr</a>
-            <span *ngIf="dbStatus && dbStatus.dbType === 'memory'" (click)="showFixModal = true" class="cursor-pointer bg-red-500/10 hover:bg-red-500/25 border border-red-500/30 text-red-400 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all shadow-sm active:scale-95 shrink-0">
-              <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
-              <span>Ephemeral<span class="hidden sm:inline"> Mode</span></span>
-            </span>
-            <span *ngIf="dbStatus && dbStatus.dbType === 'firestore'" class="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all shadow-sm shrink-0">
-              <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-              <span>Firestore<span class="hidden sm:inline"> Active</span></span>
-            </span>
           </div>
 
           <!-- Desktop Navigation Options (Visible on large screens) -->
@@ -54,7 +46,7 @@ import { environment } from '../../../../environments/environment';
                   (click)="toggleProfileDropdown($event)" 
                   class="flex items-center space-x-3 text-left focus:outline-none hover:bg-white/5 px-3 py-1.5 rounded-xl border border-transparent hover:border-white/5 transition-all duration-200 active:scale-[0.98]">
                   <!-- Avatar circle -->
-                  <div class="w-9 h-9 rounded-full bg-slate-600 flex items-center justify-center text-white font-black text-sm shadow-md border border-white/10">
+                  <div class="w-9 h-9 rounded-full bg-slate-600 flex items-center justify-center text-white text-white-force font-black text-sm shadow-md border border-white/10">
                     {{ getInitials(profile.name) }}
                   </div>
                   
@@ -159,7 +151,7 @@ import { environment } from '../../../../environments/environment';
             <ng-template #guest>
               <a routerLink="/pricing" routerLinkActive="text-primary" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Pricing</a>
               <a routerLink="/login" routerLinkActive="text-primary" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Login</a>
-              <a routerLink="/register" class="bg-primary hover:bg-opacity-90 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow shadow-primary/20">Sign Up</a>
+              <a routerLink="/register" class="bg-primary hover:bg-opacity-90 text-white text-white-force px-4 py-2 rounded-md text-sm font-medium transition-colors shadow shadow-primary/20">Sign Up</a>
             </ng-template>
           </div>
 
@@ -193,13 +185,14 @@ import { environment } from '../../../../environments/environment';
       <!-- Mobile Dropdown Menu Drawer -->
       <div 
         *ngIf="isMobileMenuOpen" 
-        class="lg:hidden absolute top-16 left-0 w-full z-40 bg-card/95 backdrop-blur-xl border-b border-white/5 p-5 flex flex-col space-y-3.5 animate-slide-down">
+        class="lg:hidden absolute top-16 left-0 w-full z-40 backdrop-blur-xl border-b border-white/5 p-5 flex flex-col space-y-3.5 animate-slide-down"
+        style="background-color: rgba(var(--color-card-rgb), 0.98);">
         
         <ng-container *ngIf="auth.userProfile$ | async as profile; else guestMobile">
           <!-- Mobile Profile Widget Card -->
           <div class="flex items-center space-x-3 p-3 bg-white/5 rounded-2xl border border-white/5 mb-2">
             <!-- Avatar circle -->
-            <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white font-black text-sm shadow-md border border-white/10">
+            <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white text-white-force font-black text-sm shadow-md border border-white/10">
               {{ getInitials(profile.name) }}
             </div>
             
@@ -246,7 +239,7 @@ import { environment } from '../../../../environments/environment';
         <ng-template #guestMobile>
           <a routerLink="/pricing" (click)="isMobileMenuOpen = false" routerLinkActive="text-primary font-bold" class="text-gray-300 hover:text-white text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all">Pricing</a>
           <a routerLink="/login" (click)="isMobileMenuOpen = false" routerLinkActive="text-primary font-bold" class="text-gray-300 hover:text-white text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all">Login</a>
-          <a routerLink="/register" (click)="isMobileMenuOpen = false" class="bg-primary hover:bg-opacity-90 text-white text-center text-sm py-2.5 px-4 rounded-xl transition-colors font-medium shadow shadow-primary/20">Sign Up</a>
+          <a routerLink="/register" (click)="isMobileMenuOpen = false" class="bg-primary hover:bg-opacity-90 text-white text-white-force text-center text-sm py-2.5 px-4 rounded-xl transition-colors font-medium shadow shadow-primary/20">Sign Up</a>
         </ng-template>
       </div>
     </nav>
