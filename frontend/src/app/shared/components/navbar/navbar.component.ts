@@ -32,11 +32,11 @@ import { environment } from '../../../../environments/environment';
 
             <!-- Logged-in User Links -->
             <ng-container *ngIf="auth.userProfile$ | async as profile; else guest">
-              <a routerLink="/" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: true}" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Dashboard</a>
-              <a routerLink="/pricing" routerLinkActive="text-primary" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Pricing</a>
+              <a routerLink="/" routerLinkActive="text-primary" [routerLinkActiveOptions]="{exact: true}" class="nav-link px-3 py-2 rounded-md text-sm font-medium transition-colors">Dashboard</a>
+              <a routerLink="/pricing" routerLinkActive="text-primary" class="nav-link px-3 py-2 rounded-md text-sm font-medium transition-colors">Pricing</a>
               
               <!-- Graveyard Link -->
-              <a routerLink="/graveyard" routerLinkActive="text-accent" class="text-gray-300 hover:text-accent px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center mr-2">
+              <a routerLink="/graveyard" routerLinkActive="text-accent" class="nav-link px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center mr-2">
                 <span>Graveyard</span>
               </a>
 
@@ -52,14 +52,14 @@ import { environment } from '../../../../environments/environment';
                   
                   <!-- Display Name & Chevron -->
                   <div class="flex flex-col text-left">
-                    <span class="text-white font-bold text-sm leading-tight inline-block max-w-[120px] truncate">{{ profile.name }}</span>
-                    <span class="text-gray-400 text-[10px] font-semibold uppercase tracking-wider capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : 'Free') }}</span>
+                    <span class="nav-profile-name font-bold text-sm leading-tight inline-block max-w-[120px] truncate">{{ profile.name }}</span>
+                    <span class="nav-profile-plan text-[10px] font-semibold uppercase tracking-wider capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : 'Free') }}</span>
                   </div>
                   
                   <!-- Chevron icon -->
                   <svg 
                     [ngClass]="{'rotate-180': isProfileDropdownOpen}"
-                    class="w-4 h-4 text-gray-400 transition-transform duration-300" 
+                    class="w-4 h-4 nav-profile-chevron transition-transform duration-300" 
                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
                   </svg>
@@ -149,8 +149,8 @@ import { environment } from '../../../../environments/environment';
 
             <!-- Guest User Links -->
             <ng-template #guest>
-              <a routerLink="/pricing" routerLinkActive="text-primary" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Pricing</a>
-              <a routerLink="/login" routerLinkActive="text-primary" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">Login</a>
+              <a routerLink="/pricing" routerLinkActive="text-primary" class="nav-link px-3 py-2 rounded-md text-sm font-medium transition-colors">Pricing</a>
+              <a routerLink="/login" routerLinkActive="text-primary" class="nav-link px-3 py-2 rounded-md text-sm font-medium transition-colors">Login</a>
               <a routerLink="/register" class="bg-primary hover:bg-opacity-90 text-white text-white-force px-4 py-2 rounded-md text-sm font-medium transition-colors shadow shadow-primary/20">Sign Up</a>
             </ng-template>
           </div>

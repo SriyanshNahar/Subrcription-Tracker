@@ -219,3 +219,39 @@ body.theme-light .text-white-force {
 body.theme-light .text-transparent {
   color: transparent !important;
 }
+
+/* Custom robust classes for navbar links & profile metadata across themes */
+.nav-link {
+  color: #9CA3AF !important;
+  transition: color 0.2s ease;
+}
+body.theme-light .nav-link {
+  color: #475569 !important;
+}
+.nav-link:hover {
+  color: #FFFFFF !important;
+}
+body.theme-light .nav-link:hover {
+  color: var(--color-primary) !important;
+}
+
+.nav-profile-name {
+  color: #FFFFFF !important;
+}
+body.theme-light .nav-profile-name {
+  color: #0F172A !important;
+}
+
+.nav-profile-plan {
+  color: #9CA3AF !important;
+}
+body.theme-light .nav-profile-plan {
+  color: #475569 !important;
+}
+
+.nav-profile-chevron {
+  color: #9CA3AF !important;
+}
+body.theme-light .nav-profile-chevron {
+  color: #475569 !important;
+}
