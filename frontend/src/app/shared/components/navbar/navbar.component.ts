@@ -183,16 +183,14 @@ import { ToastrService } from 'ngx-toastr';
               </select>
             </div>
 
-            <!-- Hamburger Button -->
+            <!-- Premium CSS-Animated Hamburger/Close Button -->
             <button 
               (click)="toggleMobileMenu()" 
-              class="text-gray-300 hover:text-white p-2 rounded-xl bg-white/5 border border-white/5 focus:outline-none transition-all active:scale-95">
-              <svg *ngIf="!isMobileMenuOpen" class="w-5.5 h-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-              <svg *ngIf="isMobileMenuOpen" class="w-5.5 h-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              [class.open]="isMobileMenuOpen"
+              class="nav-mobile-toggle relative flex flex-col justify-center items-center rounded-xl focus:outline-none transition-all active:scale-95">
+              <span class="hamburger-line line-top" [class.open]="isMobileMenuOpen"></span>
+              <span class="hamburger-line line-middle" [class.open]="isMobileMenuOpen"></span>
+              <span class="hamburger-line line-bottom" [class.open]="isMobileMenuOpen"></span>
             </button>
           </div>
         </div>

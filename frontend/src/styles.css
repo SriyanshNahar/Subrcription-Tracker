@@ -255,3 +255,50 @@ body.theme-light .nav-profile-plan {
 body.theme-light .nav-profile-chevron {
   color: #475569 !important;
 }
+
+/* Premium Animated Hamburger Button */
+.nav-mobile-toggle {
+  color: #E5E7EB !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  position: relative;
+  cursor: pointer;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+body.theme-light .nav-mobile-toggle {
+  color: #1E293B !important;
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+}
+
+.hamburger-line {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background-color: currentColor;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: absolute;
+}
+
+.line-top {
+  transform: translateY(-5px);
+}
+.line-top.open {
+  transform: rotate(45deg) translateY(0);
+}
+
+.line-middle {
+  opacity: 1;
+}
+.line-middle.open {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+
+.line-bottom {
+  transform: translateY(5px);
+}
+.line-bottom.open {
+  transform: rotate(-45deg) translateY(0);
+}
