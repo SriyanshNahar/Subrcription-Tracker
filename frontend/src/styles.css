@@ -209,7 +209,13 @@ body.theme-light .bg-slate-600,
 body.theme-light .bg-emerald-600,
 body.theme-light .bg-emerald-700,
 body.theme-light .bg-red-500,
-body.theme-light .bg-gradient-to-r,
+body.theme-light .bg-gradient-to-r.text-white,
+body.theme-light .bg-gradient-to-r.text-white-force,
 body.theme-light .text-white-force {
   color: #FFFFFF !important;
+}
+
+/* Ensuring gradient text with text-transparent maintains transparency in Light Oasis theme */
+body.theme-light .text-transparent {
+  color: transparent !important;
 }
