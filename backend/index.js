@@ -180,14 +180,22 @@ const updateUserPlan = async (userId, planKey, razorpaySubscriptionId) => {
   const durationDays = planKey.includes('yearly') ? 365 : 30;
   const planExpiry = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
 
+  let success = false;
   if (dbType === 'firestore') {
-    await db.collection('users').doc(userId).set({
-      plan: planName,
-      planExpiry: planExpiry,
-      razorpaySubscriptionId: razorpaySubscriptionId,
-      updatedAt: new Date()
-    }, { merge: true });
-  } else {
+    try {
+      await db.collection('users').doc(userId).set({
+        plan: planName,
+        planExpiry: planExpiry,
+        razorpaySubscriptionId: razorpaySubscriptionId,
+        updatedAt: new Date()
+      }, { merge: true });
+      success = true;
+    } catch (err) {
+      console.error('⚠️ Firestore updateUserPlan failed, falling back to memory:', err.message);
+    }
+  }
+
+  if (!success) {
     let user = inMemoryDB.users.find(u => u.id === userId);
     if (!user) {
       user = { id: userId, createdAt: new Date() };
@@ -203,14 +211,22 @@ const updateUserPlan = async (userId, planKey, razorpaySubscriptionId) => {
 };
 
 const downgradeUserToFree = async (userId) => {
+  let success = false;
   if (dbType === 'firestore') {
-    await db.collection('users').doc(userId).set({
-      plan: 'free',
-      razorpaySubscriptionId: null,
-      planExpiry: null,
-      updatedAt: new Date()
-    }, { merge: true });
-  } else {
+    try {
+      await db.collection('users').doc(userId).set({
+        plan: 'free',
+        razorpaySubscriptionId: null,
+        planExpiry: null,
+        updatedAt: new Date()
+      }, { merge: true });
+      success = true;
+    } catch (err) {
+      console.error('⚠️ Firestore downgradeUserToFree failed, falling back to memory:', err.message);
+    }
+  }
+
+  if (!success) {
     let user = inMemoryDB.users.find(u => u.id === userId);
     if (user) {
       user.plan = 'free';
@@ -225,14 +241,17 @@ const downgradeUserToFree = async (userId) => {
 
 const findUserBySubscriptionId = async (subscriptionId) => {
   if (dbType === 'firestore') {
-    const snapshot = await db.collection('users').where('razorpaySubscriptionId', '==', subscriptionId).limit(1).get();
-    if (!snapshot.empty) {
-      return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+    try {
+      const snapshot = await db.collection('users').where('razorpaySubscriptionId', '==', subscriptionId).limit(1).get();
+      if (!snapshot.empty) {
+        return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+      }
+      return null;
+    } catch (err) {
+      console.error('⚠️ Firestore findUserBySubscriptionId failed, falling back to memory:', err.message);
     }
-    return null;
-  } else {
-    return inMemoryDB.users.find(u => u.razorpaySubscriptionId === subscriptionId) || null;
   }
+  return inMemoryDB.users.find(u => u.razorpaySubscriptionId === subscriptionId) || null;
 };
 
 // Middleware for auth
@@ -244,13 +263,10 @@ const authenticate = async (req, res, next) => {
     if (dbType === 'firestore') {
       try {
         decoded = await admin.auth().verifyIdToken(token);
-        decoded.id = decoded.uid || decoded.sub;
       } catch (err) {
         console.warn('⚠️ Firebase token verification failed, trying decode fallback:', err.message);
         decoded = jwt.decode(token);
-        if (decoded) {
-          decoded.id = decoded.uid || decoded.sub;
-        } else {
+        if (!decoded) {
           throw err;
         }
       }
@@ -260,9 +276,6 @@ const authenticate = async (req, res, next) => {
       } catch (err) {
         // If local verification fails, try decoding as Firebase Token
         decoded = jwt.decode(token);
-        if (decoded) {
-          decoded.id = decoded.uid || decoded.sub;
-        }
       }
     }
     
@@ -270,7 +283,14 @@ const authenticate = async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
     
-    req.user = decoded;
+    // Extract a guaranteed user id from claims
+    const userId = decoded.uid || decoded.sub || decoded.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Invalid token: user identifier (uid/sub/id) not found' });
+    }
+    
+    // Copy to a new extensible object to bypass frozen objects from Firebase verifyIdToken
+    req.user = { ...decoded, id: String(userId) };
     next();
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
@@ -317,12 +337,20 @@ app.post('/api/auth/register', async (req, res) => {
   
   try {
     let existingUser = null;
+    let usedFirestore = false;
     if (dbType === 'firestore') {
-      const snapshot = await db.collection('users').where('email', '==', email).limit(1).get();
-      if (!snapshot.empty) {
-        existingUser = snapshot.docs[0].data();
+      try {
+        const snapshot = await db.collection('users').where('email', '==', email).limit(1).get();
+        if (!snapshot.empty) {
+          existingUser = snapshot.docs[0].data();
+        }
+        usedFirestore = true;
+      } catch (err) {
+        console.error('⚠️ Firestore register check failed, falling back to memory:', err.message);
       }
-    } else {
+    }
+    
+    if (!usedFirestore) {
       existingUser = inMemoryDB.users.find(u => u.email === email);
     }
     
@@ -340,12 +368,24 @@ app.post('/api/auth/register', async (req, res) => {
       createdAt: new Date()
     };
     
+    let savedToFirestore = false;
     if (dbType === 'firestore') {
-      await db.collection('users').doc(userId).set(newUser);
-    } else {
-      inMemoryDB.users.push(newUser);
-      saveLocalDB();
+      try {
+        await db.collection('users').doc(userId).set(newUser);
+        savedToFirestore = true;
+      } catch (err) {
+        console.error('⚠️ Firestore register save failed, falling back to memory:', err.message);
+      }
     }
+    
+    // Always keep a warm copy in memory database
+    const memIndex = inMemoryDB.users.findIndex(u => u.email === email);
+    if (memIndex === -1) {
+      inMemoryDB.users.push(newUser);
+    } else {
+      inMemoryDB.users[memIndex] = newUser;
+    }
+    saveLocalDB();
     
     const token = jwt.sign(
       { id: newUser.id, email: newUser.email, name: newUser.name }, 
@@ -363,12 +403,20 @@ app.post('/api/auth/login', async (req, res) => {
   
   try {
     let user = null;
+    let fetchedFromFirestore = false;
     if (dbType === 'firestore') {
-      const snapshot = await db.collection('users').where('email', '==', email).limit(1).get();
-      if (!snapshot.empty) {
-        user = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+      try {
+        const snapshot = await db.collection('users').where('email', '==', email).limit(1).get();
+        if (!snapshot.empty) {
+          user = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+        }
+        fetchedFromFirestore = true;
+      } catch (err) {
+        console.error('⚠️ Firestore login query failed, falling back to memory:', err.message);
       }
-    } else {
+    }
+    
+    if (!fetchedFromFirestore || !user) {
       user = inMemoryDB.users.find(u => u.email === email);
     }
     
@@ -391,14 +439,18 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/subscriptions', authenticate, async (req, res) => {
   try {
     if (dbType === 'firestore') {
-      const snapshot = await db.collection('subscriptions').where('userId', '==', req.user.id).get();
-      const subs = [];
-      snapshot.forEach(doc => subs.push({ id: doc.id, ...doc.data() }));
-      res.json(subs);
-    } else {
-      const subs = inMemoryDB.subscriptions.filter(s => s.userId === req.user.id);
-      res.json(subs);
+      try {
+        const snapshot = await db.collection('subscriptions').where('userId', '==', req.user.id).get();
+        const subs = [];
+        snapshot.forEach(doc => subs.push({ id: doc.id, ...doc.data() }));
+        return res.json(subs);
+      } catch (err) {
+        console.error('⚠️ Firestore getSubscriptions failed, falling back to memory:', err.message);
+      }
     }
+    
+    const subs = inMemoryDB.subscriptions.filter(s => s.userId === req.user.id);
+    res.json(subs);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -408,12 +460,20 @@ app.post('/api/subscriptions', authenticate, async (req, res) => {
   try {
     // 1. Fetch user's plan
     let userPlan = 'free';
+    let planFetched = false;
     if (dbType === 'firestore') {
-      const userDoc = await db.collection('users').doc(req.user.id).get();
-      if (userDoc.exists) {
-        userPlan = userDoc.data().plan || 'free';
+      try {
+        const userDoc = await db.collection('users').doc(req.user.id).get();
+        if (userDoc.exists) {
+          userPlan = userDoc.data().plan || 'free';
+        }
+        planFetched = true;
+      } catch (err) {
+        console.error('⚠️ Firestore getUserPlan failed, falling back to memory:', err.message);
       }
-    } else {
+    }
+    
+    if (!planFetched) {
       const user = inMemoryDB.users.find(u => u.id === req.user.id);
       if (user) {
         userPlan = user.plan || 'free';
@@ -422,10 +482,18 @@ app.post('/api/subscriptions', authenticate, async (req, res) => {
 
     // 2. Enforce subscription tier limits (Free: 3, Pro: 15, Family: Unlimited)
     let subsCount = 0;
+    let counted = false;
     if (dbType === 'firestore') {
-      const snapshot = await db.collection('subscriptions').where('userId', '==', req.user.id).get();
-      subsCount = snapshot.size;
-    } else {
+      try {
+        const snapshot = await db.collection('subscriptions').where('userId', '==', req.user.id).get();
+        subsCount = snapshot.size;
+        counted = true;
+      } catch (err) {
+        console.error('⚠️ Firestore countSubs failed, falling back to memory:', err.message);
+      }
+    }
+    
+    if (!counted) {
       subsCount = inMemoryDB.subscriptions.filter(s => s.userId === req.user.id).length;
     }
 
@@ -441,21 +509,30 @@ app.post('/api/subscriptions', authenticate, async (req, res) => {
       });
     }
 
-
     // 3. Save subscription
     if (dbType === 'firestore') {
-      const docRef = await db.collection('subscriptions').add({
-        ...req.body,
-        userId: req.user.id,
-        createdAt: new Date()
-      });
-      res.json({ id: docRef.id, ...req.body });
-    } else {
-      const sub = { ...req.body, id: Date.now().toString(), userId: req.user.id, createdAt: new Date() };
-      inMemoryDB.subscriptions.push(sub);
-      saveLocalDB();
-      res.json(sub);
+      try {
+        const docRef = await db.collection('subscriptions').add({
+          ...req.body,
+          userId: req.user.id,
+          createdAt: new Date()
+        });
+        
+        // Also save to memory backup
+        const sub = { ...req.body, id: docRef.id, userId: req.user.id, createdAt: new Date() };
+        inMemoryDB.subscriptions.push(sub);
+        saveLocalDB();
+        
+        return res.json(sub);
+      } catch (err) {
+        console.error('⚠️ Firestore addSubscription failed, falling back to memory:', err.message);
+      }
     }
+    
+    const sub = { ...req.body, id: Date.now().toString(), userId: req.user.id, createdAt: new Date() };
+    inMemoryDB.subscriptions.push(sub);
+    saveLocalDB();
+    res.json(sub);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -464,15 +541,27 @@ app.post('/api/subscriptions', authenticate, async (req, res) => {
 app.put('/api/subscriptions/:id', authenticate, async (req, res) => {
   try {
     if (dbType === 'firestore') {
-      await db.collection('subscriptions').doc(req.params.id).update(req.body);
-      res.json({ id: req.params.id, ...req.body });
-    } else {
-      const index = inMemoryDB.subscriptions.findIndex(s => s.id === req.params.id && s.userId === req.user.id);
-      if (index === -1) return res.status(404).json({ error: 'Not found' });
-      inMemoryDB.subscriptions[index] = { ...inMemoryDB.subscriptions[index], ...req.body };
-      saveLocalDB();
-      res.json(inMemoryDB.subscriptions[index]);
+      try {
+        await db.collection('subscriptions').doc(req.params.id).update(req.body);
+        
+        // Also sync memory copy
+        const index = inMemoryDB.subscriptions.findIndex(s => s.id === req.params.id && s.userId === req.user.id);
+        if (index !== -1) {
+          inMemoryDB.subscriptions[index] = { ...inMemoryDB.subscriptions[index], ...req.body };
+          saveLocalDB();
+        }
+        
+        return res.json({ id: req.params.id, ...req.body });
+      } catch (err) {
+        console.error('⚠️ Firestore updateSubscription failed, falling back to memory:', err.message);
+      }
     }
+    
+    const index = inMemoryDB.subscriptions.findIndex(s => s.id === req.params.id && s.userId === req.user.id);
+    if (index === -1) return res.status(404).json({ error: 'Not found' });
+    inMemoryDB.subscriptions[index] = { ...inMemoryDB.subscriptions[index], ...req.body };
+    saveLocalDB();
+    res.json(inMemoryDB.subscriptions[index]);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -481,15 +570,27 @@ app.put('/api/subscriptions/:id', authenticate, async (req, res) => {
 app.delete('/api/subscriptions/:id', authenticate, async (req, res) => {
   try {
     if (dbType === 'firestore') {
-      await db.collection('subscriptions').doc(req.params.id).delete();
-      res.json({ success: true });
-    } else {
-      const index = inMemoryDB.subscriptions.findIndex(s => s.id === req.params.id && s.userId === req.user.id);
-      if (index === -1) return res.status(404).json({ error: 'Not found' });
-      inMemoryDB.subscriptions.splice(index, 1);
-      saveLocalDB();
-      res.json({ success: true });
+      try {
+        await db.collection('subscriptions').doc(req.params.id).delete();
+        
+        // Also delete from memory copy
+        const index = inMemoryDB.subscriptions.findIndex(s => s.id === req.params.id && s.userId === req.user.id);
+        if (index !== -1) {
+          inMemoryDB.subscriptions.splice(index, 1);
+          saveLocalDB();
+        }
+        
+        return res.json({ success: true });
+      } catch (err) {
+        console.error('⚠️ Firestore deleteSubscription failed, falling back to memory:', err.message);
+      }
     }
+    
+    const index = inMemoryDB.subscriptions.findIndex(s => s.id === req.params.id && s.userId === req.user.id);
+    if (index === -1) return res.status(404).json({ error: 'Not found' });
+    inMemoryDB.subscriptions.splice(index, 1);
+    saveLocalDB();
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -499,10 +600,18 @@ app.delete('/api/subscriptions/:id', authenticate, async (req, res) => {
 app.get('/api/analytics/summary', authenticate, async (req, res) => {
   try {
     let subs = [];
+    let fetched = false;
     if (dbType === 'firestore') {
-      const snapshot = await db.collection('subscriptions').where('userId', '==', req.user.id).get();
-      snapshot.forEach(doc => subs.push(doc.data()));
-    } else {
+      try {
+        const snapshot = await db.collection('subscriptions').where('userId', '==', req.user.id).get();
+        snapshot.forEach(doc => subs.push(doc.data()));
+        fetched = true;
+      } catch (err) {
+        console.error('⚠️ Firestore getAnalyticsSummary failed, falling back to memory:', err.message);
+      }
+    }
+    
+    if (!fetched) {
       subs = inMemoryDB.subscriptions.filter(s => s.userId === req.user.id);
     }
 
@@ -530,10 +639,18 @@ app.get('/api/analytics/summary', authenticate, async (req, res) => {
 app.get('/api/analytics/graveyard', authenticate, async (req, res) => {
   try {
     let subs = [];
+    let fetched = false;
     if (dbType === 'firestore') {
-      const snapshot = await db.collection('subscriptions').where('userId', '==', req.user.id).get();
-      snapshot.forEach(doc => subs.push(doc.data()));
-    } else {
+      try {
+        const snapshot = await db.collection('subscriptions').where('userId', '==', req.user.id).get();
+        snapshot.forEach(doc => subs.push(doc.data()));
+        fetched = true;
+      } catch (err) {
+        console.error('⚠️ Firestore getGraveyard failed, falling back to memory:', err.message);
+      }
+    }
+    
+    if (!fetched) {
       subs = inMemoryDB.subscriptions.filter(s => s.userId === req.user.id);
     }
 
@@ -570,37 +687,57 @@ app.post('/api/family/invite', authenticate, (req, res) => {
 app.get('/api/auth/profile', authenticate, async (req, res) => {
   try {
     if (dbType === 'firestore') {
-      const doc = await db.collection('users').doc(req.user.id).get();
-      if (doc.exists) {
-        return res.json(doc.data());
-      } else {
-        const defaultUser = {
-          id: req.user.id,
-          email: req.user.email,
-          name: req.user.name || 'User',
-          plan: 'free',
-          planExpiry: null,
-          createdAt: new Date()
-        };
-        await db.collection('users').doc(req.user.id).set(defaultUser);
-        return res.json(defaultUser);
+      try {
+        const doc = await db.collection('users').doc(req.user.id).get();
+        if (doc.exists) {
+          const profile = doc.data();
+          
+          // Keep memory warm copy
+          const memIndex = inMemoryDB.users.findIndex(u => u.id === req.user.id);
+          if (memIndex === -1) {
+            inMemoryDB.users.push(profile);
+          } else {
+            inMemoryDB.users[memIndex] = profile;
+          }
+          saveLocalDB();
+          
+          return res.json(profile);
+        } else {
+          const defaultUser = {
+            id: req.user.id,
+            email: req.user.email,
+            name: req.user.name || 'User',
+            plan: 'free',
+            planExpiry: null,
+            createdAt: new Date()
+          };
+          await db.collection('users').doc(req.user.id).set(defaultUser);
+          
+          // Also save in memory copy
+          inMemoryDB.users.push(defaultUser);
+          saveLocalDB();
+          
+          return res.json(defaultUser);
+        }
+      } catch (err) {
+        console.error('⚠️ Firestore getProfile failed, falling back to memory:', err.message);
       }
-    } else {
-      let user = inMemoryDB.users.find(u => u.id === req.user.id);
-      if (!user) {
-        user = {
-          id: req.user.id,
-          email: req.user.email,
-          name: req.user.name || 'User',
-          plan: 'free',
-          planExpiry: null,
-          createdAt: new Date()
-        };
-        inMemoryDB.users.push(user);
-        saveLocalDB();
-      }
-      return res.json(user);
     }
+    
+    let user = inMemoryDB.users.find(u => u.id === req.user.id);
+    if (!user) {
+      user = {
+        id: req.user.id,
+        email: req.user.email,
+        name: req.user.name || 'User',
+        plan: 'free',
+        planExpiry: null,
+        createdAt: new Date()
+      };
+      inMemoryDB.users.push(user);
+      saveLocalDB();
+    }
+    return res.json(user);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
