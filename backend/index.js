@@ -14,10 +14,12 @@ const axios = require('axios');
 const app = express();
 app.use(cors());
 app.use(express.json({
+  limit: '10mb',
   verify: (req, res, buf) => {
     req.rawBody = buf;
   }
 }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || 'dummy');
 
