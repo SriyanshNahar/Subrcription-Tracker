@@ -96,9 +96,15 @@ import { environment } from '../../../../environments/environment';
                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">🔑</span>
                 <input
                   [(ngModel)]="password"
-                  type="password"
+                  [type]="showPassword ? 'text' : 'password'"
                   placeholder="••••••••"
-                  class="w-full bg-[#080810]/80 border border-white/10 hover:border-white/20 focus:border-primary rounded-xl pl-11 pr-4 py-3.5 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300">
+                  class="w-full bg-[#080810]/80 border border-white/10 hover:border-white/20 focus:border-primary rounded-xl pl-11 pr-12 py-3.5 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-300">
+                <button 
+                  type="button" 
+                  (click)="showPassword = !showPassword"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white bg-transparent border-0 focus:outline-none cursor-pointer">
+                  <span>{{ showPassword ? '👁️' : '🙈' }}</span>
+                </button>
               </div>
             </div>
 
@@ -215,6 +221,7 @@ import { environment } from '../../../../environments/environment';
 export class LoginComponent implements OnInit {
   email = '';
   password = '';
+  showPassword = false;
   isLoading = false;
   errorMessage = '';
   forgotPasswordSent = false;

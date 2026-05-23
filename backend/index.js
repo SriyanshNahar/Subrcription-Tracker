@@ -743,6 +743,56 @@ app.get('/api/auth/profile', authenticate, async (req, res) => {
   }
 });
 
+app.put('/api/auth/profile', authenticate, async (req, res) => {
+  const { name, photoURL, currency } = req.body;
+  const userId = req.user.id;
+  
+  try {
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (photoURL !== undefined) updateData.photoURL = photoURL;
+    if (currency !== undefined) updateData.currency = currency;
+    updateData.updatedAt = new Date();
+    
+    if (dbType === 'firestore') {
+      try {
+        await db.collection('users').doc(userId).set(updateData, { merge: true });
+      } catch (err) {
+        console.error('⚠️ Firestore profile update failed, syncing to memory:', err.message);
+      }
+    }
+    
+    // Warm backup in memory
+    let user = inMemoryDB.users.find(u => u.id === userId);
+    if (!user) {
+      user = { id: userId, createdAt: new Date() };
+      inMemoryDB.users.push(user);
+    }
+    if (name !== undefined) user.name = name;
+    if (photoURL !== undefined) user.photoURL = photoURL;
+    if (currency !== undefined) user.currency = currency;
+    user.updatedAt = new Date();
+    saveLocalDB();
+    
+    // Fetch latest profile
+    let updatedProfile = { ...user };
+    if (dbType === 'firestore') {
+      try {
+        const doc = await db.collection('users').doc(userId).get();
+        if (doc.exists) {
+          updatedProfile = doc.data();
+        }
+      } catch (err) {
+        // Fallback to memory
+      }
+    }
+    
+    res.json(updatedProfile);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // --- MONETIZATION PLANS ---
 const PLANS = {
   pro_monthly: {

@@ -4,6 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-navbar',
@@ -46,8 +47,9 @@ import { environment } from '../../../../environments/environment';
                   (click)="toggleProfileDropdown($event)" 
                   class="flex items-center space-x-3 text-left focus:outline-none hover:bg-white/5 px-3 py-1.5 rounded-xl border border-transparent hover:border-white/5 transition-all duration-200 active:scale-[0.98]">
                   <!-- Avatar circle -->
-                  <div class="w-9 h-9 rounded-full bg-slate-600 flex items-center justify-center text-white text-white-force font-black text-sm shadow-md border border-white/10">
-                    {{ getInitials(profile.name) }}
+                  <div class="w-9 h-9 rounded-full bg-slate-600 flex items-center justify-center text-white text-white-force font-black text-sm shadow-md border border-white/10 overflow-hidden shrink-0">
+                    <img *ngIf="profile.photoURL" [src]="profile.photoURL" class="w-full h-full object-cover" alt="Avatar">
+                    <span *ngIf="!profile.photoURL">{{ getInitials(profile.name) }}</span>
                   </div>
                   
                   <!-- Display Name & Chevron -->
@@ -73,12 +75,26 @@ import { environment } from '../../../../environments/environment';
                   <div class="absolute -top-12 -left-12 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
                   <div class="absolute -bottom-12 -right-12 w-24 h-24 bg-accent/10 rounded-full blur-2xl pointer-events-none"></div>
 
-                  <!-- User Header -->
-                  <div class="pb-3 border-b border-white/5 mb-3 relative z-10">
-                    <p class="text-[9px] uppercase font-black text-gray-400 tracking-widest">Signed In As</p>
-                    <h4 class="text-white font-black text-sm truncate mt-0.5" [title]="profile.name">{{ profile.name }}</h4>
-                    <p class="text-gray-400 text-xs truncate font-medium" [title]="profile.email">{{ profile.email }}</p>
+                  <!-- User Header with profile picture edit button -->
+                  <div class="pb-3 border-b border-white/5 mb-3 relative z-10 flex items-center justify-between gap-2">
+                    <div class="flex flex-col text-left truncate flex-1">
+                      <p class="text-[9px] uppercase font-black text-gray-400 tracking-widest">Signed In As</p>
+                      <h4 class="text-white font-black text-sm truncate mt-0.5" [title]="profile.name">{{ profile.name }}</h4>
+                      <p class="text-gray-400 text-xs truncate font-medium" [title]="profile.email">{{ profile.email }}</p>
+                    </div>
+                    
+                    <div class="relative group cursor-pointer" (click)="photoInput.click()">
+                      <div class="w-11 h-11 rounded-full bg-slate-700/60 border border-white/15 flex items-center justify-center text-[10px] text-white overflow-hidden relative shadow-inner shrink-0">
+                        <img *ngIf="profile.photoURL" [src]="profile.photoURL" class="w-full h-full object-cover" alt="Avatar">
+                        <span *ngIf="!profile.photoURL" class="font-extrabold">{{ getInitials(profile.name) }}</span>
+                        <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[8px] font-black tracking-wider uppercase text-center">
+                          {{ isUploadingPhoto ? '...' : 'Edit' }}
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                  
+                  <input type="file" (change)="onPhotoSelected($event)" accept="image/*" class="hidden" #photoInput>
 
                   <!-- Active Plan Info widget with Badge Button -->
                   <div class="p-3 bg-white/5 border border-white/5 rounded-xl mb-3 flex items-center justify-between relative z-10">
@@ -192,9 +208,17 @@ import { environment } from '../../../../environments/environment';
           <!-- Mobile Profile Widget Card -->
           <div class="flex items-center space-x-3 p-3 bg-white/5 rounded-2xl border border-white/5 mb-2">
             <!-- Avatar circle -->
-            <div class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white text-white-force font-black text-sm shadow-md border border-white/10">
-              {{ getInitials(profile.name) }}
+            <div 
+              (click)="mobilePhotoInput.click()"
+              class="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center text-white text-white-force font-black text-sm shadow-md border border-white/10 overflow-hidden shrink-0 relative group cursor-pointer">
+              <img *ngIf="profile.photoURL" [src]="profile.photoURL" class="w-full h-full object-cover" alt="Avatar">
+              <span *ngIf="!profile.photoURL">{{ getInitials(profile.name) }}</span>
+              <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[7px] font-black tracking-tight text-center uppercase">
+                {{ isUploadingPhoto ? '...' : 'Edit' }}
+              </div>
             </div>
+            
+            <input type="file" (change)="onPhotoSelected($event)" accept="image/*" class="hidden" #mobilePhotoInput>
             
             <!-- Two-line info block -->
             <div class="flex flex-col text-left flex-grow">
@@ -513,12 +537,14 @@ export class NavbarComponent implements OnInit {
   isProfileDropdownOpen = false;
   dbStatus: any = null;
   showFixModal = false;
+  isUploadingPhoto = false;
 
   constructor(
     public auth: AuthService,
     private router: Router,
     private elementRef: ElementRef,
-    private http: HttpClient
+    private http: HttpClient,
+    private toastr: ToastrService
   ) {}
 
   ngOnInit() {
@@ -572,6 +598,38 @@ export class NavbarComponent implements OnInit {
     event.stopPropagation();
     event.preventDefault();
     this.isProfileDropdownOpen = !this.isProfileDropdownOpen;
+  }
+
+  onPhotoSelected(event: any) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      this.toastr.warning('Please select a photo smaller than 2MB for faster loading.', 'Photo Too Large');
+      return;
+    }
+
+    this.isUploadingPhoto = true;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64String = reader.result as string;
+      this.auth.updateUserProfile({ photoURL: base64String }).subscribe({
+        next: () => {
+          this.toastr.success('Profile photo updated successfully!', 'Avatar Synced');
+          this.isUploadingPhoto = false;
+        },
+        error: (err) => {
+          console.error('Failed to upload photo:', err);
+          this.toastr.error('Failed to sync profile photo with server.', 'Upload Failed');
+          this.isUploadingPhoto = false;
+        }
+      });
+    };
+    reader.onerror = () => {
+      this.toastr.error('Could not read image file.');
+      this.isUploadingPhoto = false;
+    };
+    reader.readAsDataURL(file);
   }
 
   logout() {

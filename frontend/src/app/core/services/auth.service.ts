@@ -142,6 +142,15 @@ export class AuthService {
     return localStorage.getItem('token');
   }
 
+  // ✅ Update user profile fields (e.g. photoURL, name, currency)
+  updateUserProfile(data: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/auth/profile`, data).pipe(
+      tap((updatedProfile: any) => {
+        this.userProfile$.next(updatedProfile);
+      })
+    );
+  }
+
   // Save to Backend
   private async saveUserToBackend(user: any, name?: string): Promise<void> {
     const token = await user.getIdToken();
