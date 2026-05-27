@@ -65,44 +65,93 @@ declare var Razorpay: any;
       </div>
  
       <!-- Plans grid -->
-      <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8 z-10 px-2">
+      <div class="max-w-7xl w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 z-10 px-2">
  
         <!-- FREE PLAN CARD -->
-        <div class="glass-card p-8 flex flex-col justify-between border border-white/5 hover:border-white/10 hover:scale-[1.02] hover:shadow-[0_10px_35px_rgba(255,255,255,0.03)] transition-all duration-300 group">
+        <div class="glass-card p-6 flex flex-col justify-between border border-white/5 hover:border-white/10 hover:scale-[1.02] hover:shadow-[0_10px_35px_rgba(255,255,255,0.03)] transition-all duration-300 group">
           <div>
             <div class="flex items-center justify-between mb-4">
-              <h3 class="text-2xl font-bold text-white group-hover:text-primary transition-colors">Starter Free</h3>
+              <h3 class="text-xl font-bold text-white group-hover:text-primary transition-colors">Starter Free</h3>
             </div>
-            <p class="text-gray-400 text-sm mb-6 leading-relaxed">Test the waters and manage your absolute essentials.</p>
-            <div class="text-5xl font-extrabold text-white mb-6">
-              ₹0<span class="text-sm font-normal text-gray-500">/ forever</span>
+            <p class="text-gray-400 text-xs mb-6 leading-relaxed">Test the waters and manage your absolute essentials.</p>
+            <div class="text-3xl font-extrabold text-white mb-6">
+              ₹0<span class="text-xs font-normal text-gray-500">/ forever</span>
             </div>
             <div class="h-px bg-white/5 w-full mb-6"></div>
-            <ul class="space-y-4 text-sm text-gray-300 mb-8">
-              <li class="flex items-center space-x-3">
+            <ul class="space-y-3.5 text-xs text-gray-300 mb-8">
+              <li class="flex items-center space-x-2.5">
                 <span class="text-primary font-bold">✓</span> <span>Track up to 3 subscriptions</span>
               </li>
-              <li class="flex items-center space-x-3">
+              <li class="flex items-center space-x-2.5">
                 <span class="text-primary font-bold">✓</span> <span>Basic dashboard spend analysis</span>
               </li>
-              <li class="flex items-center space-x-3">
+              <li class="flex items-center space-x-2.5">
                 <span class="text-primary font-bold">✓</span> <span>Browser push alerts (2 days prior)</span>
               </li>
-              <li class="flex items-center space-x-3 text-gray-600 line-through">
+              <li class="flex items-center space-x-2.5 text-gray-600 line-through">
                 <span>✗</span> <span>Expense Graveyard Shareable Card</span>
               </li>
-              <li class="flex items-center space-x-3 text-gray-600 line-through">
+              <li class="flex items-center space-x-2.5 text-gray-600 line-through">
                 <span>✗</span> <span>PDF + CSV Export (Watermark-free)</span>
               </li>
-              <li class="flex items-center space-x-3 text-gray-600 line-through">
-                <span>✗</span> <span>Family Dashboard & Duplicate subscription detector</span>
+              <li class="flex items-center space-x-2.5 text-gray-600 line-through">
+                <span>✗</span> <span>Family Dashboard & Duplicate detector</span>
               </li>
             </ul>
           </div>
           <button 
             [disabled]="true"
-            class="w-full bg-white/5 border border-white/5 text-gray-500 py-3.5 rounded-xl font-bold cursor-not-allowed">
+            class="w-full bg-white/5 border border-white/5 text-gray-500 py-3 rounded-xl font-bold cursor-not-allowed text-xs">
             Active Free Tier
+          </button>
+        </div>
+
+        <!-- STUDENT SAVER CARD -->
+        <div class="glass-card p-6 flex flex-col justify-between border border-emerald-500/10 hover:border-emerald-500/30 hover:scale-[1.02] hover:shadow-[0_10px_35px_rgba(16,185,129,0.03)] transition-all duration-300 group">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-bold text-white group-hover:text-emerald-400 transition-colors">Student Saver 🎓</h3>
+            </div>
+            <p class="text-gray-400 text-xs mb-6 leading-relaxed">Budget-friendly subscription tracking built for college students.</p>
+            <div class="text-3xl font-extrabold text-white mb-2 flex items-baseline">
+              ₹{{ getPrice('student') }}
+              <span class="text-xs font-normal text-gray-500 ml-1">/ {{ selectedBilling === 'monthly' ? 'month' : 'year' }}</span>
+            </div>
+            <p *ngIf="selectedBilling === 'yearly'" class="text-emerald-400 text-[10px] font-bold mb-6">
+              You save ₹{{ getSaving('student') }} per year!
+            </p>
+            <div *ngIf="selectedBilling === 'monthly'" class="h-5 mb-6"></div>
+            <div class="h-px bg-white/5 w-full mb-6"></div>
+            <ul class="space-y-3.5 text-xs text-gray-300 mb-8">
+              <li class="flex items-center space-x-2.5">
+                <span class="text-emerald-400 font-bold">✓</span> <span>Track up to <strong>6 subscriptions</strong></span>
+              </li>
+              <li class="flex items-center space-x-2.5">
+                <span class="text-emerald-400 font-bold">✓</span> <span>Custom email renewal alerts</span>
+              </li>
+              <li class="flex items-center space-x-2.5">
+                <span class="text-emerald-400 font-bold">✓</span> <span>Full shareable Expense Graveyard card</span>
+              </li>
+              <li class="flex items-center space-x-2.5">
+                <span class="text-emerald-400 font-bold">✓</span> <span>Cancel Assistant tools</span>
+              </li>
+              <li class="flex items-center space-x-2.5 text-gray-600 line-through">
+                <span>✗</span> <span>WhatsApp Smart Alerts</span>
+              </li>
+              <li class="flex items-center space-x-2.5 text-gray-600 line-through">
+                <span>✗</span> <span>PDF + CSV Export (Watermark-free)</span>
+              </li>
+            </ul>
+          </div>
+          <button 
+            (click)="subscribe('student')" 
+            [disabled]="isLoading || isPlanActive('student')"
+            [class.bg-white]="isPlanActive('student')"
+            [class.bg-opacity-10]="isPlanActive('student')"
+            [class.text-gray-400]="isPlanActive('student')"
+            class="w-full bg-transparent border border-emerald-500/50 hover:bg-emerald-500/10 text-emerald-400 py-3 rounded-xl font-bold transition-all duration-300 flex items-center justify-center space-x-2 cursor-pointer text-xs">
+            <span *ngIf="isLoading"><svg class="animate-spin h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg></span>
+            <span>{{ isPlanActive('student') ? 'Your Current Plan' : 'Get Student Plan' }}</span>
           </button>
         </div>
  
@@ -153,7 +202,7 @@ declare var Razorpay: any;
             [class.bg-opacity-10]="isPlanActive('pro')"
             [class.text-gray-400]="isPlanActive('pro')"
             [class.bg-gradient-to-r]="!isPlanActive('pro')"
-            class="w-full from-primary to-accent hover:opacity-95 hover:scale-[1.02] text-white py-3.5 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all duration-300 flex items-center justify-center space-x-2 cursor-pointer">
+            class="w-full from-primary to-accent hover:opacity-95 hover:scale-[1.02] text-white py-3.5 rounded-xl font-bold shadow-lg shadow-primary/20 transition-all duration-300 flex items-center justify-center space-x-2 cursor-pointer shadow-lg shadow-primary/10">
             <span *ngIf="isLoading"><svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg></span>
             <span>{{ isPlanActive('pro') ? 'Your Current Plan' : 'Upgrade to Pro' }}</span>
           </button>
@@ -175,7 +224,7 @@ declare var Razorpay: any;
             </p>
             <div *ngIf="selectedBilling === 'monthly'" class="h-6 mb-6"></div>
             <div class="h-px bg-white/5 w-full mb-6"></div>
-            <ul class="space-y-4 text-sm text-gray-300 mb-8">
+            <ul class="space-y-4 text-sm text-gray-300 mb-8 font-sans">
               <li class="flex items-center space-x-3">
                 <span class="text-emerald-400 font-bold">✓</span> <span><strong>Unlimited</strong> subscriptions tracking</span>
               </li>
@@ -210,6 +259,56 @@ declare var Razorpay: any;
             <span>{{ isPlanActive('family') ? 'Your Current Plan' : 'Get Family Plan' }}</span>
           </button>
         </div>
+
+        <!-- B2B CORPORATE PLAN CARD -->
+        <div [class.border-2]="highlightCorporate" [class.border-primary]="highlightCorporate"
+          class="glass-card p-8 flex flex-col justify-between border border-white/5 hover:border-primary/40 hover:scale-[1.02] hover:shadow-[0_0_35px_rgba(108,99,255,0.15)] transition-all duration-300 group">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-2xl font-bold text-white group-hover:text-primary transition-colors font-sans">B2B Corporate</h3>
+            </div>
+            <p class="text-gray-400 text-sm mb-6 leading-relaxed">Auditing unused licenses & GST invoice statements for enterprises.</p>
+            <div class="text-5xl font-extrabold text-white mb-2 flex items-baseline">
+              ₹{{ getPrice('corporate') }}
+              <span class="text-sm font-normal text-gray-500 ml-1">/ {{ selectedBilling === 'monthly' ? 'month' : 'year' }}</span>
+            </div>
+            <p *ngIf="selectedBilling === 'yearly'" class="text-emerald-400 text-xs font-bold mb-6">
+              You save ₹{{ getSaving('corporate') }} per year!
+            </p>
+            <div *ngIf="selectedBilling === 'monthly'" class="h-6 mb-6"></div>
+            <div class="h-px bg-white/5 w-full mb-6"></div>
+            <ul class="space-y-4 text-sm text-gray-300 mb-8 font-sans">
+              <li class="flex items-center space-x-3">
+                <span class="text-primary font-bold">✓</span> <span><strong>Unlimited</strong> subscriptions tracked</span>
+              </li>
+              <li class="flex items-center space-x-3">
+                <span class="text-primary font-bold">✓</span> <span>Up to <strong>50 team members</strong></span>
+              </li>
+              <li class="flex items-center space-x-3">
+                <span class="text-primary font-bold">✓</span> <span>GST-ready invoice export (PDF)</span>
+              </li>
+              <li class="flex items-center space-x-3">
+                <span class="text-primary font-bold">✓</span> <span>Employee SaaS seat auditing</span>
+              </li>
+              <li class="flex items-center space-x-3">
+                <span class="text-primary font-bold">✓</span> <span>Shared company dashboard portal</span>
+              </li>
+              <li class="flex items-center space-x-3">
+                <span class="text-primary font-bold">✓</span> <span>Dedicated CA Priority Support</span>
+              </li>
+            </ul>
+          </div>
+          <button 
+            (click)="subscribe('corporate')" 
+            [disabled]="isLoading || isPlanActive('corporate')"
+            [class.bg-white]="isPlanActive('corporate')"
+            [class.bg-opacity-10]="isPlanActive('corporate')"
+            [class.text-gray-400]="isPlanActive('corporate')"
+            class="w-full bg-transparent border border-primary/60 hover:bg-primary/15 text-primary py-3.5 rounded-xl font-bold transition-all duration-300 flex items-center justify-center space-x-2 cursor-pointer shadow-lg shadow-primary/5">
+            <span *ngIf="isLoading"><svg class="animate-spin h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg></span>
+            <span>{{ isPlanActive('corporate') ? 'Your Current Plan' : 'Get Corporate' }}</span>
+          </button>
+        </div>
  
       </div>
     </div>
@@ -225,11 +324,14 @@ export class PricingComponent implements OnInit {
   selectedBilling: 'monthly' | 'yearly' = 'monthly';
   isLoading = false;
   upgradeRequired = false;
+  highlightCorporate = false;
   activeUserPlan = 'free';
 
-  plans = {
-    pro: { monthly: 99, yearly: 799 },
-    family: { monthly: 199, yearly: 1499 }
+  plans: { [key: string]: { monthly: number, yearly: number } } = {
+    student: { monthly: 49, yearly: 399 },
+    pro: { monthly: 299, yearly: 2399 },
+    family: { monthly: 549, yearly: 4399 },
+    corporate: { monthly: 1499, yearly: 11999 }
   };
 
   constructor(
@@ -250,6 +352,10 @@ export class PricingComponent implements OnInit {
     // Check if query parameters show an upgrade requirement
     this.route.queryParams.subscribe(params => {
       this.upgradeRequired = params['reason'] === 'upgrade_required';
+      this.highlightCorporate = params['highlight'] === 'corporate';
+      if (this.highlightCorporate) {
+        this.toastr.info('Scroll down to explore our Enterprise Corporate features!', 'B2B Corporate Tier Highlighted');
+      }
     });
 
     // Fetch user's active plan state
@@ -260,13 +366,13 @@ export class PricingComponent implements OnInit {
     });
   }
 
-  getPrice(plan: 'pro' | 'family'): number {
+  getPrice(plan: 'student' | 'pro' | 'family' | 'corporate'): number {
     return this.selectedBilling === 'monthly'
       ? this.plans[plan].monthly
       : this.plans[plan].yearly;
   }
 
-  getSaving(plan: 'pro' | 'family'): number {
+  getSaving(plan: 'student' | 'pro' | 'family' | 'corporate'): number {
     const monthlyTotal = this.plans[plan].monthly * 12;
     const yearlyTotal = this.plans[plan].yearly;
     return monthlyTotal - yearlyTotal;
@@ -276,7 +382,7 @@ export class PricingComponent implements OnInit {
     return this.activeUserPlan === plan;
   }
 
-  async subscribe(plan: 'pro' | 'family'): Promise<void> {
+  async subscribe(plan: 'student' | 'pro' | 'family' | 'corporate'): Promise<void> {
     const profile = this.auth.userProfile$.value;
     if (!profile) {
       this.toastr.warning('Please log in to upgrade your subscription plan.');
@@ -303,6 +409,44 @@ export class PricingComponent implements OnInit {
 
       this.toastr.success('Checkout initialized!');
 
+      // ✅ MOCK CHECKOUT OVERRIDE FOR DEVELOPMENT SANDBOX (Bypasses real script crashes)
+      if (response.keyId === 'dummy' || response.subscriptionId.startsWith('sub_mock_')) {
+        this.toastr.info('Entering Sandbox Payment Emulator...', 'Sandbox Sandbox Activated');
+        
+        const mockPaymentResponse = {
+          razorpay_subscription_id: response.subscriptionId,
+          razorpay_payment_id: 'pay_mock_' + Math.random().toString(36).substr(2, 9),
+          razorpay_signature: 'sig_mock_' + Math.random().toString(36).substr(2, 9)
+        };
+
+        setTimeout(async () => {
+          try {
+            this.isLoading = true;
+            this.toastr.info('Verifying secure transaction signatures...');
+            
+            await this.http.post(`${environment.apiUrl}/api/payment/verify`, {
+              ...mockPaymentResponse,
+              plan: planKey
+            }).toPromise();
+
+            this.toastr.success(`[SANDBOX SUCCESS] Subscribed to SubTrackr ${plan.toUpperCase()}!`, 'Plan Activated!');
+            this.auth.fetchUserProfile().subscribe();
+            
+            if (plan === 'corporate') {
+              this.router.navigate(['/corporate']);
+            } else {
+              this.router.navigate(['/']);
+            }
+          } catch (verifyError: any) {
+            console.error('Payment verification failed:', verifyError);
+            this.toastr.error(verifyError?.error?.error || 'Verification failed.');
+          } finally {
+            this.isLoading = false;
+          }
+        }, 1500);
+        return;
+      }
+
       // Step 2: Open Razorpay checkout modal
       const options = {
         key: response.keyId || 'rzp_test_dummyKeyId', // Dynamically loaded from backend
@@ -328,7 +472,11 @@ export class PricingComponent implements OnInit {
             // Refresh user profile
             this.auth.fetchUserProfile().subscribe();
             
-            this.router.navigate(['/']);
+            if (plan === 'corporate') {
+              this.router.navigate(['/corporate']);
+            } else {
+              this.router.navigate(['/']);
+            }
           } catch (verifyError: any) {
             console.error('Payment verification failed:', verifyError);
             this.toastr.error(verifyError?.error?.error || 'Verification failed. Contact support.');

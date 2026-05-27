@@ -144,9 +144,13 @@ export class AuthService {
 
   // ✅ Update user profile fields (e.g. photoURL, name, currency)
   updateUserProfile(data: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/auth/profile`, data).pipe(
+    const token = this.getToken();
+    const headers: { [header: string]: string } = token ? { Authorization: `Bearer ${token}` } : {};
+    return this.http.put(`${this.apiUrl}/auth/profile`, data, { headers }).pipe(
       tap((updatedProfile: any) => {
-        this.userProfile$.next(updatedProfile);
+        const currentProfile = this.userProfile$.value;
+        const merged = { ...currentProfile, ...updatedProfile };
+        this.userProfile$.next(merged);
       })
     );
   }

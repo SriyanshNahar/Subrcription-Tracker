@@ -41,6 +41,11 @@ import { ToastrService } from 'ngx-toastr';
                 <span>Graveyard</span>
               </a>
 
+              <!-- Corporate Link -->
+              <a *ngIf="profile.plan === 'corporate' || profile.orgId" routerLink="/corporate" routerLinkActive="text-primary" class="nav-link px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-1">
+                <span>🏢 Corporate</span>
+              </a>
+
               <!-- User Profile Dropdown Button and Menu -->
               <div class="relative inline-block text-left pl-4 border-l border-white/10">
                 <button 
@@ -55,7 +60,7 @@ import { ToastrService } from 'ngx-toastr';
                   <!-- Display Name & Chevron -->
                   <div class="flex flex-col text-left">
                     <span class="nav-profile-name font-bold text-sm leading-tight inline-block max-w-[120px] truncate">{{ profile.name }}</span>
-                    <span class="nav-profile-plan text-[10px] font-semibold uppercase tracking-wider capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : 'Free') }}</span>
+                    <span class="nav-profile-plan text-[10px] font-semibold uppercase tracking-wider capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : (profile.plan === 'corporate' ? 'Corporate' : 'Free')) }}</span>
                   </div>
                   
                   <!-- Chevron icon -->
@@ -104,10 +109,11 @@ import { ToastrService } from 'ngx-toastr';
                         [ngClass]="{
                           'text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent font-black': profile.plan === 'pro',
                           'text-emerald-400 font-black': profile.plan === 'family',
+                          'text-teal-400 font-black': profile.plan === 'corporate',
                           'text-gray-300 font-bold': profile.plan === 'free' || !profile.plan
                         }"
                         class="text-xs capitalize">
-                        {{ profile.plan === 'pro' ? 'Premium Pro' : (profile.plan === 'family' ? 'Shared Family' : 'Starter Free') }}
+                        {{ profile.plan === 'pro' ? 'Premium Pro' : (profile.plan === 'family' ? 'Shared Family' : (profile.plan === 'corporate' ? 'Corporate Plan' : 'Starter Free')) }}
                       </span>
                     </div>
                     
@@ -117,10 +123,11 @@ import { ToastrService } from 'ngx-toastr';
                       [ngClass]="{
                         'bg-slate-500/10 text-slate-400 border border-slate-500/30 hover:bg-slate-500/20': profile.plan === 'free' || !profile.plan,
                         'bg-gradient-to-r from-primary to-accent text-white shadow shadow-primary/20 hover:opacity-90': profile.plan === 'pro',
-                        'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20': profile.plan === 'family'
+                        'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20': profile.plan === 'family',
+                        'bg-teal-500/10 text-teal-400 border border-teal-500/30 hover:bg-teal-500/20': profile.plan === 'corporate'
                       }"
                       class="text-[9px] font-black px-2 py-0.5 rounded-md tracking-wider transition-all duration-300 transform active:scale-95 cursor-pointer">
-                      {{ profile.plan === 'pro' ? 'PRO' : (profile.plan === 'family' ? 'FAMILY' : 'FREE') }}
+                      {{ profile.plan === 'pro' ? 'PRO' : (profile.plan === 'family' ? 'FAMILY' : (profile.plan === 'corporate' ? 'CORP' : 'FREE')) }}
                     </button>
                   </div>
 
@@ -145,6 +152,17 @@ import { ToastrService } from 'ngx-toastr';
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                       </svg>
                       <span>Upgrade Store</span>
+                    </a>
+
+                    <!-- WhatsApp Alerts Link -->
+                    <a *ngIf="profile.plan === 'pro' || profile.plan === 'family' || profile.plan === 'corporate'"
+                      routerLink="/whatsapp-alerts" 
+                      (click)="isProfileDropdownOpen = false" 
+                      class="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all text-xs font-semibold">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span>WhatsApp Alerts</span>
                     </a>
                   </div>
 
@@ -244,6 +262,16 @@ import { ToastrService } from 'ngx-toastr';
           <a routerLink="/graveyard" (click)="isMobileMenuOpen = false" routerLinkActive="text-accent font-bold" class="text-gray-300 hover:text-accent text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all flex items-center">
             <span>🪦 Expense Graveyard</span>
           </a>
+
+          <!-- Corporate Mobile link -->
+          <a *ngIf="profile.plan === 'corporate' || profile.orgId" routerLink="/corporate" (click)="isMobileMenuOpen = false" routerLinkActive="text-primary font-bold" class="text-gray-300 hover:text-white text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all flex items-center">
+            <span>🏢 Corporate Dashboard</span>
+          </a>
+
+          <!-- WhatsApp Alerts Mobile link -->
+          <a *ngIf="profile.plan === 'pro' || profile.plan === 'family' || profile.plan === 'corporate'" routerLink="/whatsapp-alerts" (click)="isMobileMenuOpen = false" routerLinkActive="text-emerald-400 font-bold" class="text-gray-300 hover:text-emerald-400 text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all flex items-center">
+            <span>💬 WhatsApp Alerts</span>
+          </a>
           
           <div class="h-px bg-white/5 my-2"></div>
           
@@ -302,6 +330,7 @@ import { ToastrService } from 'ngx-toastr';
               [ngClass]="{
                 'from-primary to-accent': profile.plan === 'pro',
                 'from-emerald-500 to-teal-500': profile.plan === 'family',
+                'from-teal-500 to-cyan-500': profile.plan === 'corporate',
                 'from-gray-500 to-slate-600': profile.plan === 'free' || !profile.plan
               }"
               class="absolute inset-0 bg-gradient-to-r opacity-15 blur-xl"></div>
@@ -311,13 +340,14 @@ import { ToastrService } from 'ngx-toastr';
               [ngClass]="{
                 'text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent': profile.plan === 'pro',
                 'text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400': profile.plan === 'family',
+                'text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400': profile.plan === 'corporate',
                 'text-gray-300': profile.plan === 'free' || !profile.plan
               }"
               class="text-3xl font-black">
-              {{ profile.plan === 'pro' ? 'Premium Pro' : (profile.plan === 'family' ? 'Shared Family' : 'Starter Free') }}
+              {{ profile.plan === 'pro' ? 'Premium Pro' : (profile.plan === 'family' ? 'Shared Family' : (profile.plan === 'corporate' ? 'Corporate Plan' : 'Starter Free')) }}
             </h4>
             <div class="mt-2 text-sm text-gray-400 font-medium">
-              {{ profile.plan === 'pro' ? '₹199 / month' : (profile.plan === 'family' ? '₹399 / month' : '₹0 / forever') }}
+              {{ profile.plan === 'pro' ? '₹99 / month' : (profile.plan === 'family' ? '₹199 / month' : (profile.plan === 'corporate' ? '₹999 / month' : '₹0 / forever')) }}
             </div>
           </div>
 
@@ -602,26 +632,60 @@ export class NavbarComponent implements OnInit {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      this.toastr.warning('Please select a photo smaller than 2MB for faster loading.', 'Photo Too Large');
+    if (file.size > 5 * 1024 * 1024) {
+      this.toastr.warning('Please select a photo smaller than 5MB.', 'Photo Too Large');
       return;
     }
 
     this.isUploadingPhoto = true;
     const reader = new FileReader();
     reader.onload = () => {
-      const base64String = reader.result as string;
-      this.auth.updateUserProfile({ photoURL: base64String }).subscribe({
-        next: () => {
-          this.toastr.success('Profile photo updated successfully!', 'Avatar Synced');
-          this.isUploadingPhoto = false;
-        },
-        error: (err) => {
-          console.error('Failed to upload photo:', err);
-          this.toastr.error('Failed to sync profile photo with server.', 'Upload Failed');
+      const img = new Image();
+      img.src = reader.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Crisp target dimensions suitable for fast-loading profile avatars
+        const targetSize = 160;
+        canvas.width = targetSize;
+        canvas.height = targetSize;
+
+        if (ctx) {
+          // Crop square to avoid stretching proportions
+          const minDim = Math.min(img.width, img.height);
+          const sx = (img.width - minDim) / 2;
+          const sy = (img.height - minDim) / 2;
+
+          ctx.drawImage(
+            img,
+            sx, sy, minDim, minDim, // crop source
+            0, 0, targetSize, targetSize // scale target
+          );
+
+          // High compression output (JPEG format at 75% quality yields extremely compact ~15KB values)
+          const base64String = canvas.toDataURL('image/jpeg', 0.75);
+
+          this.auth.updateUserProfile({ photoURL: base64String }).subscribe({
+            next: () => {
+              this.toastr.success('Profile photo updated successfully!', 'Avatar Synced');
+              this.isUploadingPhoto = false;
+            },
+            error: (err) => {
+              console.error('Failed to upload photo:', err);
+              this.toastr.error('Failed to sync profile photo with server.', 'Upload Failed');
+              this.isUploadingPhoto = false;
+            }
+          });
+        } else {
+          this.toastr.error('Canvas processing failure.');
           this.isUploadingPhoto = false;
         }
-      });
+      };
+      img.onerror = () => {
+        this.toastr.error('Unable to parse image data.');
+        this.isUploadingPhoto = false;
+      };
     };
     reader.onerror = () => {
       this.toastr.error('Could not read image file.');

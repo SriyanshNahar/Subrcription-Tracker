@@ -10,6 +10,7 @@ const bcrypt = require('bcryptjs');
 const sgMail = require('@sendgrid/mail');
 const Razorpay = require('razorpay');
 const axios = require('axios');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 app.use(cors());
@@ -20,6 +21,45 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// Health check endpoint (Render Cold Start Fix)
+app.get('/health', (req, res) => {
+  res.json({ status: 'alive', timestamp: new Date().toISOString() });
+});
+
+// Self-ping Render every 10 minutes to keep active
+const https = require('https');
+const http = require('http');
+setInterval(() => {
+  const url = process.env.RENDER_URL;
+  if (url) {
+    const client = url.startsWith('https') ? https : http;
+    client.get(`${url}/health`, () => {}).on('error', () => {});
+  }
+}, 10 * 60 * 1000);
+
+// Rate Limiters (Fix 3)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests, please try again later' }
+});
+
+const whatsappLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 3,
+  message: { error: 'WhatsApp test limit reached. Wait 1 minute.' }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many attempts. Try again in 15 minutes.' }
+});
+
+app.use('/api/auth/', authLimiter);
+app.use('/api/whatsapp/test', whatsappLimiter);
+app.use('/api/', apiLimiter);
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || 'dummy');
 
@@ -137,7 +177,24 @@ try {
     });
     db = admin.firestore();
     dbType = 'firestore';
-    console.log('🚀 SUCCESS: Firebase Admin Initialized. Using Google Firestore (Data is Persistent!).');
+    console.log('🚀 SUCCESS: Firebase Admin Initialized. Checking Cloud Firestore database status...');
+
+    // Asynchronously perform startup verification to check if the Firestore database is actually created/enabled (Fixes 5 NOT_FOUND warnings spam!)
+    db.collection('users').limit(1).get()
+      .then(() => {
+        console.log('✅ Firestore validation query succeeded. Cloud Firestore database is active and persistent!');
+      })
+      .catch((err) => {
+        if (err.message.includes('NOT_FOUND') || err.message.includes('not found') || err.code === 5) {
+          dbType = 'memory';
+          console.warn('\n⚠️  [FIRESTORE DATABASE NOT CREATED]  ⚠️');
+          console.warn('Your Firebase credentials are valid, but the Cloud Firestore database has not been created yet in your Firebase Project.');
+          console.warn('💡 ACTION REQUIRED: Go to Firebase Console -> click "Firestore Database" in the left sidebar -> click "Create Database" -> select test mode & region.');
+          console.warn('🔄 Automatically downgraded database mode to "memory" (saving to database.json) to eliminate request latency and console warnings.\n');
+        } else {
+          console.warn('⚠️ Firestore initialization check returned a warning:', err.message);
+        }
+      });
   } else {
     throw new Error('No FIREBASE_SERVICE_ACCOUNT_KEY provided in environment variables.');
   }
@@ -154,13 +211,25 @@ let inMemoryDB = {
   users: [],
   subscriptions: [],
   alerts: [],
-  payments: []
+  payments: [],
+  organizations: [],
+  organization_members: [],
+  organization_subscriptions: []
 };
 
 // Safely restore data from local storage
 if (fs.existsSync(DB_FILE)) {
   try {
-    inMemoryDB = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    const fileData = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    inMemoryDB = {
+      users: fileData.users || [],
+      subscriptions: fileData.subscriptions || [],
+      alerts: fileData.alerts || [],
+      payments: fileData.payments || [],
+      organizations: fileData.organizations || [],
+      organization_members: fileData.organization_members || [],
+      organization_subscriptions: fileData.organization_subscriptions || []
+    };
     console.log('📦 SUCCESS: Restored local persistent backup from database.json');
   } catch (err) {
     console.error('⚠️ database.json parse failed, resetting to empty schema:', err.message);
@@ -178,7 +247,7 @@ const saveLocalDB = () => {
 
 // --- DATABASE PLAN HELPERS ---
 const updateUserPlan = async (userId, planKey, razorpaySubscriptionId) => {
-  const planName = planKey.includes('family') ? 'family' : 'pro';
+  const planName = planKey.includes('corporate') ? 'corporate' : (planKey.includes('family') ? 'family' : (planKey.includes('student') ? 'student' : 'pro'));
   const durationDays = planKey.includes('yearly') ? 365 : 30;
   const planExpiry = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
 
@@ -198,7 +267,7 @@ const updateUserPlan = async (userId, planKey, razorpaySubscriptionId) => {
   }
 
   if (!success) {
-    let user = inMemoryDB.users.find(u => u.id === userId);
+    let user = inMemoryDB.users.find(u => u && u.id === userId);
     if (!user) {
       user = { id: userId, createdAt: new Date() };
       inMemoryDB.users.push(user);
@@ -229,7 +298,7 @@ const downgradeUserToFree = async (userId) => {
   }
 
   if (!success) {
-    let user = inMemoryDB.users.find(u => u.id === userId);
+    let user = inMemoryDB.users.find(u => u && u.id === userId);
     if (user) {
       user.plan = 'free';
       user.razorpaySubscriptionId = null;
@@ -476,7 +545,7 @@ app.post('/api/subscriptions', authenticate, async (req, res) => {
     }
     
     if (!planFetched) {
-      const user = inMemoryDB.users.find(u => u.id === req.user.id);
+      const user = inMemoryDB.users.find(u => u && u.id === req.user.id);
       if (user) {
         userPlan = user.plan || 'free';
       }
@@ -501,13 +570,19 @@ app.post('/api/subscriptions', authenticate, async (req, res) => {
 
     if (userPlan === 'free' && subsCount >= 3) {
       return res.status(403).json({
-        error: 'Starter Free plan limit reached (max 3 subscriptions). Please upgrade to Premium Pro (15) or Shared Family for unlimited tracking!'
+        error: 'Starter Free plan limit reached (max 3 subscriptions). Please upgrade to Student (6) or Premium Pro (20)!'
       });
     }
 
-    if (userPlan === 'pro' && subsCount >= 15) {
+    if (userPlan === 'student' && subsCount >= 6) {
       return res.status(403).json({
-        error: 'Premium Pro plan limit reached (max 15 subscriptions). Please upgrade to Shared Family for unlimited tracking!'
+        error: 'Student plan limit reached (max 6 subscriptions). Please upgrade to Premium Pro (20) or Shared Family for unlimited tracking!'
+      });
+    }
+
+    if (userPlan === 'pro' && subsCount >= 20) {
+      return res.status(403).json({
+        error: 'Premium Pro plan limit reached (max 20 subscriptions). Please upgrade to Shared Family for unlimited tracking!'
       });
     }
 
@@ -694,16 +769,40 @@ app.get('/api/auth/profile', authenticate, async (req, res) => {
         if (doc.exists) {
           const profile = doc.data();
           
+          // Query B2B organization memberships dynamically (CRITICAL BUG FIX)
+          let orgId = null;
+          let orgRole = null;
+          try {
+            const memberSnap = await db.collection('organization_members')
+              .where('userId', '==', req.user.id)
+              .where('status', '==', 'active')
+              .limit(1)
+              .get();
+            if (!memberSnap.empty) {
+              orgId = memberSnap.docs[0].data().orgId;
+              orgRole = memberSnap.docs[0].data().role;
+            }
+          } catch (orgErr) {
+            console.error('Failed to query B2B org membership in profile fetch:', orgErr.message);
+          }
+
+          const profileWithB2B = {
+            id: doc.id,
+            ...profile,
+            orgId,
+            orgRole
+          };
+
           // Keep memory warm copy
-          const memIndex = inMemoryDB.users.findIndex(u => u.id === req.user.id);
+          const memIndex = inMemoryDB.users.findIndex(u => u && u.id === req.user.id);
           if (memIndex === -1) {
-            inMemoryDB.users.push(profile);
+            inMemoryDB.users.push(profileWithB2B);
           } else {
-            inMemoryDB.users[memIndex] = profile;
+            inMemoryDB.users[memIndex] = profileWithB2B;
           }
           saveLocalDB();
           
-          return res.json(profile);
+          return res.json(profileWithB2B);
         } else {
           const defaultUser = {
             id: req.user.id,
@@ -711,7 +810,9 @@ app.get('/api/auth/profile', authenticate, async (req, res) => {
             name: req.user.name || 'User',
             plan: 'free',
             planExpiry: null,
-            createdAt: new Date()
+            createdAt: new Date(),
+            orgId: null,
+            orgRole: null
           };
           await db.collection('users').doc(req.user.id).set(defaultUser);
           
@@ -726,7 +827,7 @@ app.get('/api/auth/profile', authenticate, async (req, res) => {
       }
     }
     
-    let user = inMemoryDB.users.find(u => u.id === req.user.id);
+    let user = inMemoryDB.users.find(u => u && u.id === req.user.id);
     if (!user) {
       user = {
         id: req.user.id,
@@ -734,19 +835,33 @@ app.get('/api/auth/profile', authenticate, async (req, res) => {
         name: req.user.name || 'User',
         plan: 'free',
         planExpiry: null,
-        createdAt: new Date()
+        createdAt: new Date(),
+        orgId: null,
+        orgRole: null
       };
       inMemoryDB.users.push(user);
       saveLocalDB();
     }
-    return res.json(user);
+
+    // Resolve B2B organization memberships dynamically in memory mode
+    const member = inMemoryDB.organization_members.find(
+      m => m.userId === req.user.id && m.status === 'active'
+    );
+
+    const profileWithB2B = {
+      ...user,
+      orgId: member ? member.orgId : null,
+      orgRole: member ? member.role : null
+    };
+
+    return res.json(profileWithB2B);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 app.put('/api/auth/profile', authenticate, async (req, res) => {
-  const { name, photoURL, currency } = req.body;
+  const { name, photoURL, currency, phone, whatsappEnabled, whatsappPreferences } = req.body;
   const userId = req.user.id;
   
   try {
@@ -754,6 +869,9 @@ app.put('/api/auth/profile', authenticate, async (req, res) => {
     if (name !== undefined) updateData.name = name;
     if (photoURL !== undefined) updateData.photoURL = photoURL;
     if (currency !== undefined) updateData.currency = currency;
+    if (phone !== undefined) updateData.phone = phone;
+    if (whatsappEnabled !== undefined) updateData.whatsappEnabled = whatsappEnabled;
+    if (whatsappPreferences !== undefined) updateData.whatsappPreferences = whatsappPreferences;
     updateData.updatedAt = new Date();
     
     if (dbType === 'firestore') {
@@ -765,7 +883,7 @@ app.put('/api/auth/profile', authenticate, async (req, res) => {
     }
     
     // Warm backup in memory
-    let user = inMemoryDB.users.find(u => u.id === userId);
+    let user = inMemoryDB.users.find(u => u && u.id === userId);
     if (!user) {
       user = { id: userId, createdAt: new Date() };
       inMemoryDB.users.push(user);
@@ -773,6 +891,9 @@ app.put('/api/auth/profile', authenticate, async (req, res) => {
     if (name !== undefined) user.name = name;
     if (photoURL !== undefined) user.photoURL = photoURL;
     if (currency !== undefined) user.currency = currency;
+    if (phone !== undefined) user.phone = phone;
+    if (whatsappEnabled !== undefined) user.whatsappEnabled = whatsappEnabled;
+    if (whatsappPreferences !== undefined) user.whatsappPreferences = whatsappPreferences;
     user.updatedAt = new Date();
     saveLocalDB();
     
@@ -782,7 +903,7 @@ app.put('/api/auth/profile', authenticate, async (req, res) => {
       try {
         const doc = await db.collection('users').doc(userId).get();
         if (doc.exists) {
-          updatedProfile = doc.data();
+          updatedProfile = { id: doc.id, ...doc.data() };
         }
       } catch (err) {
         // Fallback to memory
@@ -822,6 +943,20 @@ const PLANS = {
     id: process.env.RAZORPAY_FAMILY_YEARLY_PLAN_ID,
     name: 'SubTrackr Family Yearly',
     amount: 149900, // ₹1499 in paise
+    interval: 1,
+    period: 'yearly'
+  },
+  corporate_monthly: {
+    id: process.env.RAZORPAY_CORPORATE_MONTHLY_PLAN_ID,
+    name: 'SubTrackr Corporate Monthly',
+    amount: 99900, // ₹999 in paise
+    interval: 1,
+    period: 'monthly'
+  },
+  corporate_yearly: {
+    id: process.env.RAZORPAY_CORPORATE_YEARLY_PLAN_ID,
+    name: 'SubTrackr Corporate Yearly',
+    amount: 799900, // ₹7999 in paise
     interval: 1,
     period: 'yearly'
   }
@@ -1004,11 +1139,16 @@ app.post('/api/payment/webhook', async (req, res) => {
   }
 });
 
-// Start CRON
-cron.schedule('0 9 * * *', () => {
-  console.log('Running daily subscription alert check...');
-  // Logic to send emails via SendGrid
-});
+// --- B2B CORPORATE & WHATSAPP ROUTERS ---
+const organizationRoutes = require('./routes/organization');
+const whatsappRoutes = require('./routes/whatsapp');
+app.use('/api/org', authenticate, organizationRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+
+// Start modular CRON jobs schedule
+const { startDailyAlertJob, startMonthlySummaryJob } = require('./jobs/alert.cron');
+startDailyAlertJob();
+startMonthlySummaryJob();
 
 // --- SERVE STATIC FRONTEND IN PRODUCTION ---
 const frontendPath = path.join(__dirname, '../frontend/dist/frontend/browser');
@@ -1037,3 +1177,12 @@ app.get('/*splat', (req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Export database primitives dynamically using getter functions (Fixes Circular Dependency!)
+module.exports = {
+  db: () => db,
+  getDbType: () => dbType,
+  inMemoryDB,
+  saveLocalDB,
+  admin
+};

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { planGuard } from './core/guards/plan.guard';
+import { corporateGuard } from './core/guards/corporate.guard';
 
 export const routes: Routes = [
   {
@@ -30,6 +31,21 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/verify-email/verify-email.component').then(m => m.VerifyEmailComponent)
   },
   {
+    path: 'whatsapp-alerts',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/whatsapp-alerts/whatsapp-alerts.component').then(m => m.WhatsappAlertsComponent)
+  },
+  {
+    path: 'corporate',
+    canActivate: [authGuard, corporateGuard],
+    loadComponent: () => import('./features/corporate/corporate.component').then(m => m.CorporateComponent)
+  },
+  {
+    path: 'accept-invite',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/auth/accept-invite/accept-invite.component').then(m => m.AcceptInviteComponent)
+  },
+  {
     path: 'privacy',
     loadComponent: () => import('./features/privacy/privacy.component').then(m => m.PrivacyComponent)
   },
@@ -38,3 +54,4 @@ export const routes: Routes = [
     loadComponent: () => import('./features/terms/terms.component').then(m => m.TermsComponent)
   }
 ];
+
