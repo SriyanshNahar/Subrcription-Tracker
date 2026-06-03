@@ -17,7 +17,7 @@ import { FormsModule } from '@angular/forms';
         <div class="flex items-center justify-between h-16">
           <!-- Brand Logo & Diagnostic Badge -->
           <div class="flex items-center space-x-3">
-            <a routerLink="/" (click)="isMobileMenuOpen = false; isProfileDropdownOpen = false" class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">Vaultly</a>
+            <a routerLink="/" (click)="isMobileMenuOpen = false; isProfileDropdownOpen = false" class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">Trackovo</a>
           </div>
 
           <!-- Desktop Navigation Options (Visible on large screens) -->
@@ -753,7 +753,7 @@ export class NavbarComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.activeTheme = localStorage.getItem('vaultly_theme') || 'theme-light';
+    this.activeTheme = localStorage.getItem('trackovo_theme') || 'theme-light';
     this.checkDatabaseStatus();
 
     // Subscribe to auth user profile changes to keep settings in sync
@@ -788,7 +788,7 @@ export class NavbarComponent implements OnInit {
   onThemeChange(event: any) {
     const theme = event.target.value;
     this.activeTheme = theme;
-    localStorage.setItem('vaultly_theme', theme);
+    localStorage.setItem('trackovo_theme', theme);
     this.applyTheme(theme);
   }
 

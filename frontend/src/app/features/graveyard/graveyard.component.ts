@@ -55,7 +55,7 @@ export class GraveyardComponent implements OnInit {
   ngOnInit() {
     this.seo.generateTags({
       title: 'Expense Graveyard',
-      description: 'Audit your cancelled digital plans and celebrate your monthly/yearly savings. Turn digital wastage into financial victory with the Vaultly Graveyard.'
+      description: 'Audit your cancelled digital plans and celebrate your monthly/yearly savings. Turn digital wastage into financial victory with the Trackovo Graveyard.'
     });
 
     this.subService.getGraveyard().subscribe({

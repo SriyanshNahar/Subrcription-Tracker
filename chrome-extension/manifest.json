@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Vaultly Saver Extension",
+  "name": "Trackovo Saver Extension",
   "version": "1.0.0",
-  "description": "Automatically capture subscriptions as you browse popular SaaS billing pages and save them to Vaultly.",
+  "description": "Automatically capture subscriptions as you browse popular SaaS billing pages and save them to Trackovo.",
   "permissions": [
     "storage",
     "activeTab",

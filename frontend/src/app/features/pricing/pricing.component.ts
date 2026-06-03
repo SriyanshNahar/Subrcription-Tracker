@@ -32,7 +32,7 @@ declare var Razorpay: any;
  
       <div class="text-center max-w-2xl mx-auto mb-16 relative">
         <h1 class="text-4xl md:text-6xl font-black tracking-tight text-white mb-4">
-          Choose Your <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Vaultly</span> Plan
+          Choose Your <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Trackovo</span> Plan
         </h1>
         <p class="text-gray-400 text-lg">
           Take control of your expenses. Save hundreds of rupees monthly by terminating the expense graveyard.
@@ -462,7 +462,7 @@ export class PricingComponent implements OnInit {
               plan: planKey
             }).toPromise();
 
-            this.toastr.success(`[SANDBOX SUCCESS] Subscribed to Vaultly ${plan.toUpperCase()}!`, 'Plan Activated!');
+            this.toastr.success(`[SANDBOX SUCCESS] Subscribed to Trackovo ${plan.toUpperCase()}!`, 'Plan Activated!');
             this.auth.fetchUserProfile().subscribe();
             
             if (plan === 'corporate') {
@@ -484,8 +484,8 @@ export class PricingComponent implements OnInit {
       const options = {
         key: response.keyId || 'rzp_test_dummyKeyId', // Dynamically loaded from backend
         subscription_id: response.subscriptionId,
-        name: 'Vaultly',
-        description: `Upgrade to Vaultly ${plan.toUpperCase()} Plan (${this.selectedBilling})`,
+        name: 'Trackovo',
+        description: `Upgrade to Trackovo ${plan.toUpperCase()} Plan (${this.selectedBilling})`,
         image: '/favicon.png', // Premium custom favicon!
         prefill: { email },
         theme: { color: '#6C63FF' },
@@ -500,7 +500,7 @@ export class PricingComponent implements OnInit {
               plan: planKey
             }).toPromise();
 
-            this.toastr.success(`Congratulations! You are now subscribed to Vaultly ${plan.toUpperCase()}!`, 'Plan Activated!');
+            this.toastr.success(`Congratulations! You are now subscribed to Trackovo ${plan.toUpperCase()}!`, 'Plan Activated!');
             
             // Refresh user profile
             this.auth.fetchUserProfile().subscribe();

@@ -33,7 +33,7 @@ import { SeoService } from '../../core/services/seo.service';
               <span class="text-primary">01.</span> Introduction
             </h2>
             <p>
-              At <strong>Vaultly</strong>, we take your privacy extremely seriously. We believe that your subscription and financial details belong to you alone. This Privacy Policy details how we collect, process, and protect your information when you use our services.
+              At <strong>Trackovo</strong>, we take your privacy extremely seriously. We believe that your subscription and financial details belong to you alone. This Privacy Policy details how we collect, process, and protect your information when you use our services.
             </p>
           </section>
 
@@ -60,7 +60,7 @@ import { SeoService } from '../../core/services/seo.service';
               <span class="text-primary">03.</span> How We Use Your Data
             </h2>
             <p>
-              Your data is exclusively used to deliver and optimize Vaultly features:
+              Your data is exclusively used to deliver and optimize Trackovo features:
             </p>
             <ul class="list-disc pl-6 space-y-2 text-gray-400">
               <li>To construct your personalized dashboard and compute monthly/yearly spending metrics.</li>
@@ -102,7 +102,7 @@ import { SeoService } from '../../core/services/seo.service';
               <h4 class="text-white font-bold text-base">Have questions about your privacy?</h4>
               <p class="text-gray-400 text-xs mt-1">Our security officers are always here to assist you.</p>
             </div>
-            <a href="mailto:support@vaultly.com" class="px-5 py-2.5 rounded-xl bg-primary hover:bg-opacity-90 text-white font-semibold text-sm transition-all duration-200">
+            <a href="mailto:support@trackovo.com" class="px-5 py-2.5 rounded-xl bg-primary hover:bg-opacity-90 text-white font-semibold text-sm transition-all duration-200">
               Contact Privacy Team
             </a>
           </div>
@@ -117,7 +117,7 @@ export class PrivacyComponent implements OnInit {
   ngOnInit() {
     this.seo.generateTags({
       title: 'Privacy Policy',
-      description: 'Learn how Vaultly protects your credentials and digital subscription metrics. Your financial privacy is our highest priority.'
+      description: 'Learn how Trackovo protects your credentials and digital subscription metrics. Your financial privacy is our highest priority.'
     });
   }
 }

@@ -16,7 +16,7 @@ import { RouterModule } from '@angular/router';
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
           <!-- Brand and Mission -->
           <div class="md:col-span-2 space-y-4">
-            <h3 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Vaultly</h3>
+            <h3 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Trackovo</h3>
             <p class="text-sm max-w-sm leading-relaxed text-gray-400 font-medium">
               Take back control of your subscriptions. Monitor expenses, visualize yearly waste inside the Graveyard, and customize renewal alerts seamlessly.
             </p>
@@ -59,7 +59,7 @@ import { RouterModule } from '@angular/router';
 
         <!-- Copyright and Bottom Info -->
         <div class="flex flex-col sm:flex-row items-center justify-between text-xs font-semibold text-gray-500 space-y-4 sm:space-y-0">
-          <p>© 2026 Vaultly. All rights reserved.</p>
+          <p>© 2026 Trackovo. All rights reserved.</p>
           <div class="flex space-x-4">
             <a routerLink="/privacy" class="hover:text-white cursor-pointer transition-colors">Privacy Policy</a>
             <span>•</span>

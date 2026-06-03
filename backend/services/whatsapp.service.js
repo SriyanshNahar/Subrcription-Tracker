@@ -21,7 +21,7 @@ const WHATSAPP_FROM = `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER || '+141552
 const sendRenewalAlert = async (phone, userName, subName, amount, currency, daysLeft) => {
   const currencySymbol = currency === 'INR' ? '₹' : (currency === 'USD' ? '$' : '€');
   const bodyText = `
-📊 *Vaultly Alert*
+📊 *Trackovo Alert*
 
 Hey ${userName}! 👋
 
@@ -35,7 +35,7 @@ Reply with:
 ❌ *CANCEL* — Get cancellation help
 ⏰ *SNOOZE* — Remind me tomorrow
 
-_Vaultly — Never miss a renewal_
+_Trackovo — Never miss a renewal_
   `.trim();
 
   if (isMockMode || !client) {
@@ -59,7 +59,7 @@ _Vaultly — Never miss a renewal_
 // ✅ Send wasted subscription alert
 const sendWastedAlert = async (phone, userName, subName, amount, daysSinceUsed) => {
   const bodyText = `
-⚠️ *Vaultly — Money Alert*
+⚠️ *Trackovo — Money Alert*
 
 Hey ${userName}!
 
@@ -72,7 +72,7 @@ Reply with:
 ✅ *KEEP* — I still need it
 📊 *REPORT* — See my full waste report
 
-_Vaultly — Save money, live better_
+_Trackovo — Save money, live better_
   `.trim();
 
   if (isMockMode || !client) {
@@ -96,7 +96,7 @@ _Vaultly — Save money, live better_
 // ✅ Send monthly summary statistics
 const sendMonthlySummary = async (phone, userName, stats) => {
   const bodyText = `
-📊 *Your Monthly Vaultly Report*
+📊 *Your Monthly Trackovo Report*
 
 Hey ${userName}! Here's your summary:
 
@@ -111,7 +111,7 @@ ${stats.wastedAmount > 0
 
 Reply *REPORT* for detailed breakdown.
 
-_Vaultly — vaultly.onrender.com_
+_Trackovo — trackovo.onrender.com_
   `.trim();
 
   if (isMockMode || !client) {
@@ -144,7 +144,7 @@ const handleUserReply = async (from, body, dbCtx) => {
       responseText = "✅ Got it! We'll remind you again before next renewal. Stay on top of your subscriptions! 💪";
       break;
     case 'CANCEL':
-      responseText = "❌ No problem! Visit vaultly.onrender.com/cancel-assistant for step-by-step cancellation guide for your subscription.";
+      responseText = "❌ No problem! Visit trackovo.onrender.com/cancel-assistant for step-by-step cancellation guide for your subscription.";
       break;
     case 'SNOOZE':
       responseText = "⏰ Snoozed! We'll remind you again tomorrow morning.";
@@ -175,10 +175,10 @@ const handleUserReply = async (from, body, dbCtx) => {
       }
       break;
     case 'REPORT':
-      responseText = "📊 Your detailed report: vaultly.onrender.com/dashboard\n\nLogin to see your full expense breakdown!";
+      responseText = "📊 Your detailed report: trackovo.onrender.com/dashboard\n\nLogin to see your full expense breakdown!";
       break;
     default:
-      responseText = "👋 Hi! I'm Vaultly Bot.\n\nCommands:\n✅ KEEP\n❌ CANCEL\n⏰ SNOOZE\n📊 REPORT";
+      responseText = "👋 Hi! I'm Trackovo Bot.\n\nCommands:\n✅ KEEP\n❌ CANCEL\n⏰ SNOOZE\n📊 REPORT";
   }
 
   if (isMockMode || !client) {

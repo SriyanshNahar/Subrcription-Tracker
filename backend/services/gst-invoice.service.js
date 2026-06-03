@@ -64,7 +64,7 @@ const generateGSTReport = (orgData, subscriptions, period, user = {}) => {
       doc.rect(0, 0, 600, 15).fill('#6C63FF');
       
       doc.moveDown(1.5);
-      doc.fontSize(24).fillColor('#1F2937').font('Helvetica-Bold').text('Vaultly', 50, 40);
+      doc.fontSize(24).fillColor('#1F2937').font('Helvetica-Bold').text('Trackovo', 50, 40);
       
       const titleLabel = isIndia ? 'Subscription Expense Audit & GST Report' : `Subscription Expense Audit & Tax Statement`;
       doc.fontSize(10).fillColor('#6B7280').font('Helvetica-Oblique').text(titleLabel, 50, 68);
@@ -194,7 +194,7 @@ const generateGSTReport = (orgData, subscriptions, period, user = {}) => {
       // --- FOOTER ---
       doc.moveTo(50, 755).lineTo(545, 755).strokeColor('#E5E7EB').strokeWidth(1).stroke();
       doc.fontSize(8).font('Helvetica-Oblique').fillColor('#9CA3AF').text(
-        'Generated automatically by Vaultly B2B Portal — vaultly.onrender.com',
+        'Generated automatically by Trackovo B2B Portal — trackovo.onrender.com',
         50, 765, { align: 'center' }
       );
 

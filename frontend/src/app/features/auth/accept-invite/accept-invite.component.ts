@@ -27,7 +27,7 @@ import { SeoService } from '../../../core/services/seo.service';
 
           <h1 class="text-2xl md:text-3xl font-black mb-3">Corporate Invitation</h1>
           <p class="text-gray-400 text-sm mb-6 leading-relaxed">
-            You have been invited to manage subscription expenses and audit licenses on Vaultly Corporate.
+            You have been invited to manage subscription expenses and audit licenses on Trackovo Corporate.
           </p>
 
           <!-- Loader while checking parameters -->

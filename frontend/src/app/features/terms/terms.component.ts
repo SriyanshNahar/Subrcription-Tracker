@@ -33,7 +33,7 @@ import { SeoService } from '../../core/services/seo.service';
               <span class="text-accent">01.</span> Agreement to Terms
             </h2>
             <p>
-              By accessing and using <strong>Vaultly</strong>, you represent and warrant that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree, please refrain from using our application immediately.
+              By accessing and using <strong>Trackovo</strong>, you represent and warrant that you have read, understood, and agree to be bound by these Terms of Service. If you do not agree, please refrain from using our application immediately.
             </p>
           </section>
 
@@ -60,7 +60,7 @@ import { SeoService } from '../../core/services/seo.service';
               <span class="text-accent">03.</span> Permitted Use & Service Limitations
             </h2>
             <p>
-              Vaultly is a personal subscription tracking utility. You agree not to abuse the system:
+              Trackovo is a personal subscription tracking utility. You agree not to abuse the system:
             </p>
             <ul class="list-disc pl-6 space-y-2 text-gray-400">
               <li>Do not attempt to scrape, reverse engineer, or crack database structures.</li>
@@ -76,7 +76,7 @@ import { SeoService } from '../../core/services/seo.service';
               <span class="text-accent">04.</span> Subscription Mockups & Third-Party Pricing
             </h2>
             <p>
-              Vaultly lets you store subscription prices and renewal frequencies. 
+              Trackovo lets you store subscription prices and renewal frequencies. 
             </p>
             <p class="text-gray-400">
               We are not affiliated with, authorized, or endorsed by any external service provider cataloged inside your account. Real prices are subject to change by third-party services, and you are responsible for monitoring actual bank statements.
@@ -102,7 +102,7 @@ import { SeoService } from '../../core/services/seo.service';
               <h4 class="text-white font-bold text-base">Questions about our Terms?</h4>
               <p class="text-gray-400 text-xs mt-1">Review our license or consult our legal officers.</p>
             </div>
-            <a href="mailto:support@vaultly.com" class="px-5 py-2.5 rounded-xl bg-accent hover:bg-opacity-90 text-white font-semibold text-sm transition-all duration-200">
+            <a href="mailto:support@trackovo.com" class="px-5 py-2.5 rounded-xl bg-accent hover:bg-opacity-90 text-white font-semibold text-sm transition-all duration-200">
               Contact Support
             </a>
           </div>
@@ -117,7 +117,7 @@ export class TermsComponent implements OnInit {
   ngOnInit() {
     this.seo.generateTags({
       title: 'Terms of Service',
-      description: 'Review the terms of service governing the usage of Vaultly. Learn about data ownership, account rules, and liability disclaimers.'
+      description: 'Review the terms of service governing the usage of Trackovo. Learn about data ownership, account rules, and liability disclaimers.'
     });
   }
 }

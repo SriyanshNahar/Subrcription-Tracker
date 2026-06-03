@@ -1,7 +1,7 @@
 // CRITICAL POPUP API CONFIGURATION
 const IS_PRODUCTION = false; // Set to true on production deploy
 const API_URL = IS_PRODUCTION
-  ? 'https://vaultly.onrender.com'
+  ? 'https://trackovo.onrender.com'
   : 'http://localhost:5000';
 
 document.addEventListener('DOMContentLoaded', async () => {

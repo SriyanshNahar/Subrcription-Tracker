@@ -114,17 +114,17 @@ const inviteMember = async (dbCtx, orgId, email, role, invitedBy) => {
 
   const mailOptions = {
     to: email,
-    from: 'noreply@vaultly.com',
-    subject: 'You are invited to Vaultly Corporate Portal',
+    from: 'noreply@trackovo.com',
+    subject: 'You are invited to Trackovo Corporate Portal',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #0A0A18; color: #FFFFFF;">
-        <h2 style="color: #6C63FF; text-align: center;">Vaultly Corporate</h2>
+        <h2 style="color: #6C63FF; text-align: center;">Trackovo Corporate</h2>
         <p style="font-size: 16px; line-height: 1.6; color: #E5E7EB;">Hello!</p>
         <p style="font-size: 14px; line-height: 1.6; color: #9CA3AF;">
           You have been invited by <strong>${invitedBy}</strong> to join their corporate subscription management team as a <strong>${role.toUpperCase()}</strong>.
         </p>
         <p style="font-size: 14px; line-height: 1.6; color: #9CA3AF; margin-bottom: 25px;">
-          Vaultly Corporate helps companies track unused SaaS seats, audit licenses, and generate GST-ready invoice expense reports.
+          Trackovo Corporate helps companies track unused SaaS seats, audit licenses, and generate GST-ready invoice expense reports.
         </p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="${inviteUrl}" style="background-color: #6C63FF; color: white; padding: 12px 28px; border-radius: 8px; font-weight: bold; text-decoration: none; display: inline-block;">
@@ -135,7 +135,7 @@ const inviteMember = async (dbCtx, orgId, email, role, invitedBy) => {
           ⚠️ This secure invite link expires in 24 hours.
         </p>
         <div style="border-top: 1px solid #1f2937; margin-top: 30px; padding-top: 15px; text-align: center; font-size: 12px; color: #6B7280;">
-          Vaultly SaaS — Track every subscription. Save every rupee.
+          Trackovo SaaS — Track every subscription. Save every rupee.
         </div>
       </div>
     `

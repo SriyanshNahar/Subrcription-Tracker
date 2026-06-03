@@ -27,7 +27,7 @@ declare var Razorpay: any;
         <div class="max-w-5xl w-full z-10 space-y-12">
           
           <div class="text-center space-y-4">
-            <span class="bg-primary/20 text-primary border border-primary/30 text-xs px-4 py-1.5 rounded-full font-black uppercase tracking-wider">Vaultly for Enterprises</span>
+            <span class="bg-primary/20 text-primary border border-primary/30 text-xs px-4 py-1.5 rounded-full font-black uppercase tracking-wider">Trackovo for Enterprises</span>
             <h1 class="text-4xl md:text-6xl font-black text-white tracking-tight">
               Stop Wasting Money on <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Unused SaaS Licenses</span>
             </h1>
@@ -252,7 +252,7 @@ declare var Razorpay: any;
             <div class="glass-card p-6 text-left">
               <h3 class="text-white font-bold text-lg mb-2">How SaaS seat auditing works:</h3>
               <p class="text-gray-400 text-sm leading-relaxed">
-                When employee contracts terminate or accounts are suspended, software seat bindings inside Figma, Slack, or GitHub often remain active and continue billing silently. Vaultly compares active company member emails against assigned subscription seats, immediately flagging ex-employee seats to save you money.
+                When employee contracts terminate or accounts are suspended, software seat bindings inside Figma, Slack, or GitHub often remain active and continue billing silently. Trackovo compares active company member emails against assigned subscription seats, immediately flagging ex-employee seats to save you money.
               </p>
             </div>
 
@@ -716,7 +716,7 @@ export class CorporateComponent implements OnInit {
         const options = {
           key: res.keyId || 'rzp_test_dummy',
           subscription_id: res.subscriptionId,
-          name: 'Vaultly B2B Corporate',
+          name: 'Trackovo B2B Corporate',
           description: 'Access B2B Company Dashboards & Audits',
           image: '/favicon.png',
           prefill: { email },
@@ -836,7 +836,7 @@ export class CorporateComponent implements OnInit {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `Vaultly-GST-Report-${this.org.name.replace(/\\s+/g, '-')}-${this.gstPeriod.replace(/\\s+/g, '-')}.pdf`;
+        a.download = `Trackovo-GST-Report-${this.org.name.replace(/\\s+/g, '-')}-${this.gstPeriod.replace(/\\s+/g, '-')}.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

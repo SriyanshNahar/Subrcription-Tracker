@@ -1,5 +1,5 @@
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('🚀 Vaultly Saver Extension Installed successfully!');
+  console.log('🚀 Trackovo Saver Extension Installed successfully!');
 });
 
 // Relays tokens and tracks domain checks if needed

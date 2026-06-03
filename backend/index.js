@@ -1085,14 +1085,14 @@ app.put('/api/auth/profile', authenticate, async (req, res) => {
 const PLANS = {
   pro_monthly: {
     id: process.env.RAZORPAY_PRO_MONTHLY_PLAN_ID || process.env.RAZORPAY_PLAN_PRO_MONTHLY,
-    name: 'Vaultly Pro Monthly',
+    name: 'Trackovo Pro Monthly',
     amount: 9900,  // ₹99 in paise
     interval: 1,
     period: 'monthly'
   },
   pro_yearly: {
     id: process.env.RAZORPAY_PRO_YEARLY_PLAN_ID || process.env.RAZORPAY_PLAN_PRO_YEARLY,
-    name: 'Vaultly Pro Yearly',
+    name: 'Trackovo Pro Yearly',
     amount: 79900, // ₹799 in paise
     interval: 1,
     period: 'yearly'
@@ -1100,7 +1100,7 @@ const PLANS = {
   student_monthly: {
     id: process.env.RAZORPAY_STUDENT_MONTHLY_PLAN_ID,
     stripePriceId: process.env.STRIPE_PRICE_STUDENT_MONTHLY,
-    name: 'Vaultly Student Monthly',
+    name: 'Trackovo Student Monthly',
     amount: 4900,  // ₹49 in paise
     interval: 1,
     period: 'monthly'
@@ -1108,35 +1108,35 @@ const PLANS = {
   student_yearly: {
     id: process.env.RAZORPAY_STUDENT_YEARLY_PLAN_ID,
     stripePriceId: process.env.STRIPE_PRICE_STUDENT_YEARLY,
-    name: 'Vaultly Student Yearly',
+    name: 'Trackovo Student Yearly',
     amount: 39900, // ₹399 in paise
     interval: 1,
     period: 'yearly'
   },
   family_monthly: {
     id: process.env.RAZORPAY_FAMILY_MONTHLY_PLAN_ID,
-    name: 'Vaultly Family Monthly',
+    name: 'Trackovo Family Monthly',
     amount: 19900, // ₹199 in paise
     interval: 1,
     period: 'monthly'
   },
   family_yearly: {
     id: process.env.RAZORPAY_FAMILY_YEARLY_PLAN_ID,
-    name: 'Vaultly Family Yearly',
+    name: 'Trackovo Family Yearly',
     amount: 149900, // ₹1499 in paise
     interval: 1,
     period: 'yearly'
   },
   corporate_monthly: {
     id: process.env.RAZORPAY_CORPORATE_MONTHLY_PLAN_ID,
-    name: 'Vaultly Corporate Monthly',
+    name: 'Trackovo Corporate Monthly',
     amount: 99900, // ₹999 in paise
     interval: 1,
     period: 'monthly'
   },
   corporate_yearly: {
     id: process.env.RAZORPAY_CORPORATE_YEARLY_PLAN_ID,
-    name: 'Vaultly Corporate Yearly',
+    name: 'Trackovo Corporate Yearly',
     amount: 799900, // ₹7999 in paise
     interval: 1,
     period: 'yearly'

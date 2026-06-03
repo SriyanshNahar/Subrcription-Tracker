@@ -597,7 +597,7 @@ export class DashboardComponent implements OnInit {
 
     this.seo.generateTags({
       title: 'Premium Analytics Dashboard',
-      description: 'Optimize your digital spending in one elegant visual hub. Track active subscriptions, renewals, category spend, and reclaim wasted money with Vaultly.'
+      description: 'Optimize your digital spending in one elegant visual hub. Track active subscriptions, renewals, category spend, and reclaim wasted money with Trackovo.'
     });
     this.fetchRoiScores();
 

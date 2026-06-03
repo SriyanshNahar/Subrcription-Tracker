@@ -32,7 +32,7 @@ import { environment } from '../../../../environments/environment';
 
             <!-- Logo & Greeting -->
             <div class="text-center mb-8">
-              <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary tracking-tight">Vaultly</h1>
+              <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary tracking-tight">Trackovo</h1>
               <p class="text-gray-400 text-sm mt-2 font-medium">Track every subscription. Save every rupee.</p>
             </div>
 
@@ -129,7 +129,7 @@ import { environment } from '../../../../environments/environment';
 
             <!-- Signup Link -->
             <p class="text-gray-400 text-sm text-center mt-6">
-              New to Vaultly?
+              New to Trackovo?
               <a routerLink="/register" class="text-accent hover:text-white hover:underline font-bold ml-1 transition">Sign up free</a>
             </p>
           </div>
@@ -237,7 +237,7 @@ export class LoginComponent implements OnInit {
   ngOnInit() {
     this.seo.generateTags({
       title: 'Secure Account Access',
-      description: 'Sign in to Vaultly to access your dashboard, monitor active digital subscriptions, and avoid upcoming renewals with push reminders.'
+      description: 'Sign in to Trackovo to access your dashboard, monitor active digital subscriptions, and avoid upcoming renewals with push reminders.'
     });
   }
 

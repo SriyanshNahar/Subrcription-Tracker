@@ -26,13 +26,13 @@ export class SeoService {
    */
   generateTags(config: SeoConfig): void {
     // 1. Set Page Title
-    const fullTitle = `${config.title} | Vaultly`;
+    const fullTitle = `${config.title} | Trackovo`;
     this.titleService.setTitle(fullTitle);
 
     // 2. Set Basic Meta Tags
     this.metaService.updateTag({ name: 'description', content: config.description });
 
-    const defaultKeywords = 'subscription tracker, track subscriptions, expense manager, save money, graveyard, pricing, Vaultly';
+    const defaultKeywords = 'subscription tracker, track subscriptions, expense manager, save money, graveyard, pricing, Trackovo';
     this.metaService.updateTag({ name: 'keywords', content: config.keywords || defaultKeywords });
     this.metaService.updateTag({ name: 'robots', content: config.robots || 'index, follow' });
 

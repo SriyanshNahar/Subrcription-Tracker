@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: vaultly-fullstack
+    name: trackovo-fullstack
     runtime: node
     plan: free
     buildCommand: npm run build

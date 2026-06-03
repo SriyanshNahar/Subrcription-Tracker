@@ -1,7 +1,7 @@
 {
-  "name": "vaultly-backend",
+  "name": "trackovo-backend",
   "version": "1.0.0",
-  "description": "Vaultly - Smart Subscription & Expense Tracker",
+  "description": "Trackovo - Smart Subscription & Expense Tracker",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
