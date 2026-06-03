@@ -54,7 +54,7 @@ export class VerifyEmailComponent implements OnInit {
   ngOnInit() {
     this.seo.generateTags({
       title: 'Verify Your Email Address',
-      description: 'A verification link has been dispatched to your signup email. Verify your identity to activate your SubTrackr expense tracker dashboard.'
+      description: 'A verification link has been dispatched to your signup email. Verify your identity to activate your Vaultly expense tracker dashboard.'
     });
   }
 

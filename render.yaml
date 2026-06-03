@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: subtrackr-fullstack
+    name: vaultly-fullstack
     runtime: node
     plan: free
     buildCommand: npm run build

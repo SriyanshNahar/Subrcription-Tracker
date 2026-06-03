@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Vaultly Saver</title>
+  <style>
+    body {
+      width: 320px;
+      margin: 0;
+      padding: 0;
+      background: #090915;
+      color: white;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+    }
+    .wrapper {
+      padding: 20px;
+      position: relative;
+    }
+    .glow {
+      position: absolute;
+      top: -20px;
+      left: -20px;
+      width: 100px;
+      height: 100px;
+      background: rgba(108, 99, 255, 0.25);
+      border-radius: 50%;
+      blur: 40px;
+      filter: blur(40px);
+      pointer-events: none;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 10;
+    }
+    .logo {
+      font-size: 18px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #6C63FF, #FF007F);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .badge {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: bold;
+      color: #9CA3AF;
+    }
+    .badge.connected {
+      color: #10B981;
+      border-color: rgba(16,185,129,0.25);
+      background: rgba(16,185,129,0.05);
+    }
+    .content-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 16px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      position: relative;
+      z-index: 10;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 10px;
+      font-weight: bold;
+      color: #9CA3AF;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    input, select {
+      width: 100%;
+      box-sizing: border-box;
+      background: #000000;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: white;
+      font-size: 12px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input:focus, select:focus {
+      border-color: #6C63FF;
+    }
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, #6C63FF, #FF007F);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: opacity 0.2s;
+    }
+    .btn:hover {
+      opacity: 0.95;
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: white;
+    }
+    .status-msg {
+      font-size: 11px;
+      text-align: center;
+      margin-top: 10px;
+      color: #EF4444;
+    }
+    .hidden {
+      display: none !important;
+    }
+    .success-container {
+      text-align: center;
+      padding: 10px 0;
+    }
+    .success-icon {
+      font-size: 40px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="glow"></div>
+    
+    <div class="header">
+      <span class="logo">Vaultly Saver</span>
+      <span id="conn-badge" class="badge">Checking...</span>
+    </div>
+
+    <!-- Login View (shown when token is invalid or expired) -->
+    <div id="login-view" class="content-box hidden">
+      <h3 style="margin-top: 0; font-size: 14px; font-weight: 800;">Log in to Vaultly</h3>
+      <p style="font-size: 11px; color: #9CA3AF; line-height: 1.5; margin-bottom: 16px;">Connect the saver extension to your subscription portal dashboard accounts.</p>
+      
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="email" placeholder="you@example.com">
+      </div>
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="••••••••">
+      </div>
+      
+      <button id="btn-login" class="btn">Log In</button>
+      <div id="login-error" class="status-msg"></div>
+    </div>
+
+    <!-- Save Subscription View -->
+    <div id="save-view" class="content-box hidden">
+      <h3 style="margin-top: 0; font-size: 13px; font-weight: 800; color: #D1D5DB;">Save Subscription</h3>
+      
+      <div class="form-group">
+        <label>Subscription Name</label>
+        <input type="text" id="sub-name" placeholder="Netflix, Figma, Notion...">
+      </div>
+      
+      <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <div class="form-group" style="flex: 1; margin: 0;">
+          <label>Price Amount</label>
+          <input type="number" id="sub-amount" placeholder="0.00">
+        </div>
+        <div class="form-group" style="flex: 1; margin: 0;">
+          <label>Currency</label>
+          <select id="sub-currency">
+            <option value="INR">INR (₹)</option>
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="AUD">AUD (A$)</option>
+            <option value="CAD">CAD (C$)</option>
+            <option value="SGD">SGD (S$)</option>
+            <option value="AED">AED (د.إ)</option>
+            <option value="JPY">JPY (¥)</option>
+            <option value="CHF">CHF (Fr)</option>
+            <option value="SEK">SEK (kr)</option>
+            <option value="NOK">NOK (kr)</option>
+            <option value="DKK">DKK (kr)</option>
+            <option value="NZD">NZD (NZ$)</option>
+            <option value="BRL">BRL (R$)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Billing Cycle</label>
+        <select id="sub-billing">
+          <option value="Monthly">Monthly</option>
+          <option value="Yearly">Yearly</option>
+          <option value="Weekly">Weekly</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label>Category</label>
+        <select id="sub-category">
+          <option value="Entertainment">Entertainment</option>
+          <option value="Work">Work</option>
+          <option value="Health">Health</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <button id="btn-save" class="btn">Add to Vaultly</button>
+      <button id="btn-logout" class="btn btn-secondary" style="margin-top: 8px;">Switch Account</button>
+      <div id="save-error" class="status-msg" style="color: #EF4444;"></div>
+    </div>
+
+    <!-- Success View -->
+    <div id="success-view" class="content-box success-container hidden">
+      <div class="success-icon">✅</div>
+      <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 800;">Added successfully!</h3>
+      <p style="font-size: 11px; color: #9CA3AF; margin-bottom: 16px;" id="success-desc">Netflix has been synced to your dashboard.</p>
+      <button id="btn-close" class="btn">Done</button>
+    </div>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

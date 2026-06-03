@@ -158,18 +158,27 @@ export class AuthService {
   // Save to Backend
   private async saveUserToBackend(user: any, name?: string): Promise<void> {
     const token = await user.getIdToken();
-    const userData = {
-      name: name || user.displayName || 'User',
-      email: user.email
-    };
     
     // We hit the profile endpoint which creates the user if they don't exist
     this.http.get(`${this.apiUrl}/auth/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     }).subscribe({
-      next: (profile) => {
+      next: (profile: any) => {
         if (user.emailVerified) {
-          this.userProfile$.next(profile);
+          const resolvedName = name || user.displayName;
+          if ((profile.name === 'User' || !profile.name) && resolvedName && resolvedName !== 'User') {
+            this.updateUserProfile({ name: resolvedName }).subscribe({
+              next: (updatedProfile) => {
+                this.userProfile$.next(updatedProfile);
+              },
+              error: (err) => {
+                console.error('Failed to auto-heal profile name:', err);
+                this.userProfile$.next(profile);
+              }
+            });
+          } else {
+            this.userProfile$.next(profile);
+          }
         }
       },
       error: (err) => console.error('Failed to sync user with backend:', err)

@@ -32,7 +32,7 @@ declare var Razorpay: any;
  
       <div class="text-center max-w-2xl mx-auto mb-16 relative">
         <h1 class="text-4xl md:text-6xl font-black tracking-tight text-white mb-4">
-          Choose Your <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">SubTrackr</span> Plan
+          Choose Your <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">Vaultly</span> Plan
         </h1>
         <p class="text-gray-400 text-lg">
           Take control of your expenses. Save hundreds of rupees monthly by terminating the expense graveyard.
@@ -326,6 +326,7 @@ export class PricingComponent implements OnInit {
   upgradeRequired = false;
   highlightCorporate = false;
   activeUserPlan = 'free';
+  userProfile: any = null;
 
   plans: { [key: string]: { monthly: number, yearly: number } } = {
     student: { monthly: 49, yearly: 399 },
@@ -362,6 +363,7 @@ export class PricingComponent implements OnInit {
     this.auth.userProfile$.subscribe(profile => {
       if (profile) {
         this.activeUserPlan = profile.plan || 'free';
+        this.userProfile = profile;
       }
     });
   }
@@ -393,7 +395,38 @@ export class PricingComponent implements OnInit {
     this.isLoading = true;
     const userId = profile.id || profile.uid;
     const email = profile.email;
-    const planKey = `${plan}_${this.selectedBilling}`;
+    const planId = `${plan}_${this.selectedBilling}`;
+    const country = this.userProfile?.country;
+
+    console.log('Country:', this.userProfile?.country);
+    console.log('Plan:', planId);
+
+    if (country !== 'IN') {
+      this.toastr.info('Redirecting to Stripe secure international card payment...');
+      this.http.post(`${environment.apiUrl}/api/payment/stripe/subscribe`, {
+        planId,
+        userEmail: this.userProfile?.email || email,
+        country: this.userProfile?.country || country
+      }).subscribe({
+        next: (res: any) => {
+          console.log('Checkout URL:', res.checkoutUrl);
+          if (res.checkoutUrl) {
+            window.location.href = res.checkoutUrl;
+          } else {
+            this.toastr.error('Stripe secure checkout link missing from server response.');
+            this.isLoading = false;
+          }
+        },
+        error: (stripeErr: any) => {
+          console.error('Stripe billing checkout error:', stripeErr);
+          this.toastr.error(stripeErr?.error?.error || 'Failed to initialize international credit card checkout.');
+          this.isLoading = false;
+        }
+      });
+      return;
+    }
+
+    const planKey = planId;
 
     try {
       this.toastr.info('Preparing secure checkout...');
@@ -429,7 +462,7 @@ export class PricingComponent implements OnInit {
               plan: planKey
             }).toPromise();
 
-            this.toastr.success(`[SANDBOX SUCCESS] Subscribed to SubTrackr ${plan.toUpperCase()}!`, 'Plan Activated!');
+            this.toastr.success(`[SANDBOX SUCCESS] Subscribed to Vaultly ${plan.toUpperCase()}!`, 'Plan Activated!');
             this.auth.fetchUserProfile().subscribe();
             
             if (plan === 'corporate') {
@@ -451,8 +484,8 @@ export class PricingComponent implements OnInit {
       const options = {
         key: response.keyId || 'rzp_test_dummyKeyId', // Dynamically loaded from backend
         subscription_id: response.subscriptionId,
-        name: 'SubTrackr',
-        description: `Upgrade to SubTrackr ${plan.toUpperCase()} Plan (${this.selectedBilling})`,
+        name: 'Vaultly',
+        description: `Upgrade to Vaultly ${plan.toUpperCase()} Plan (${this.selectedBilling})`,
         image: '/favicon.png', // Premium custom favicon!
         prefill: { email },
         theme: { color: '#6C63FF' },
@@ -467,7 +500,7 @@ export class PricingComponent implements OnInit {
               plan: planKey
             }).toPromise();
 
-            this.toastr.success(`Congratulations! You are now subscribed to SubTrackr ${plan.toUpperCase()}!`, 'Plan Activated!');
+            this.toastr.success(`Congratulations! You are now subscribed to Vaultly ${plan.toUpperCase()}!`, 'Plan Activated!');
             
             // Refresh user profile
             this.auth.fetchUserProfile().subscribe();

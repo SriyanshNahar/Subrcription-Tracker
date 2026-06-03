@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { SubscriptionService } from '../../core/services/subscription.service';
 import { ToastrService } from 'ngx-toastr';
 import { BaseChartDirective } from 'ng2-charts';
@@ -8,13 +8,15 @@ import { Chart, ChartConfiguration, ChartData, ChartType, registerables } from '
 import { AuthService } from '../../core/services/auth.service';
 import { Router, RouterModule } from '@angular/router';
 import { SeoService } from '../../core/services/seo.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 Chart.register(...registerables);
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CurrencyPipe, DatePipe, BaseChartDirective, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, CurrencyPipe, DatePipe, BaseChartDirective, RouterModule],
   template: `
     <div class="py-6">
       
@@ -36,20 +38,27 @@ Chart.register(...registerables);
           <span *ngIf="activeUserPlan === 'pro'" class="bg-gradient-to-r from-primary to-accent text-white text-xs px-3 py-1 rounded-full font-bold shadow shadow-primary/20">PRO USER</span>
           <span *ngIf="activeUserPlan === 'family'" class="bg-emerald-500/20 text-emerald-400 text-xs px-3 py-1 rounded-full font-bold border border-emerald-500/30">FAMILY MEMBER</span>
         </div>
-        <button (click)="openAddModal()" class="bg-primary hover:bg-opacity-90 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-primary/20">
-          + Add Subscription
-        </button>
+        <div class="flex items-center space-x-3">
+          <!-- Connect Gmail / Scan Inbox Header Action -->
+          <button (click)="openGmailModal()" class="bg-white/10 hover:bg-white/15 text-gray-200 border border-white/10 px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center space-x-2">
+            <span>🔍 Scan Gmail Receipts</span>
+          </button>
+          
+          <button (click)="openAddModal()" class="bg-primary hover:bg-opacity-90 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-primary/20">
+            + Add Subscription
+          </button>
+        </div>
       </div>
 
       <!-- Stats Grid -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="glass-card p-6">
           <p class="text-gray-400 text-sm font-medium mb-1">Total Monthly Spend</p>
-          <p class="text-4xl font-bold text-white">{{ summary?.totalMonthly || 0 | currency:'INR' }}</p>
+          <p class="text-4xl font-bold text-white">{{ summary?.totalMonthly || 0 | currency:userProfileCurrency }}</p>
         </div>
         <div class="glass-card p-6">
           <p class="text-gray-400 text-sm font-medium mb-1">Total Yearly Spend</p>
-          <p class="text-4xl font-bold text-accent">{{ summary?.totalYearly || 0 | currency:'INR' }}</p>
+          <p class="text-4xl font-bold text-accent">{{ summary?.totalYearly || 0 | currency:userProfileCurrency }}</p>
         </div>
         <div class="glass-card p-6">
           <p class="text-gray-400 text-sm font-medium mb-1">Active Subscriptions</p>
@@ -104,7 +113,9 @@ Chart.register(...registerables);
             </div>
             
             <div class="divide-y divide-gray-800">
-              <div *ngFor="let sub of filteredSubscriptions" class="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors">
+              <div *ngFor="let sub of filteredSubscriptions" 
+                   (click)="pingSubscription(sub.id)"
+                   class="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/5 transition-colors cursor-pointer">
                 <div class="flex items-center space-x-4">
                   <div class="w-12 h-12 flex-shrink-0 bg-gray-800 rounded-xl flex items-center justify-center text-xl overflow-hidden">
                     <img *ngIf="sub.logo" [src]="getLogoUrl(sub)" (error)="sub.logo = null" alt="logo" class="w-full h-full object-cover">
@@ -113,6 +124,20 @@ Chart.register(...registerables);
                   <div>
                     <h3 class="text-base sm:text-lg font-medium text-white flex flex-wrap items-center gap-2">
                       <span>{{ sub.name }}</span>
+                      
+                      <!-- AI ROI Score Badge -->
+                      <ng-container *ngIf="getRoiScoreForSub(sub.id) as r">
+                        <span *ngIf="r.score >= 8" class="bg-emerald-500/10 text-emerald-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-emerald-500/25">
+                          ⭐ {{ r.score }}/10 Great Value
+                        </span>
+                        <span *ngIf="r.score >= 4 && r.score <= 7" class="bg-amber-500/10 text-amber-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-amber-500/25">
+                          ⚠️ {{ r.score }}/10 Review This
+                        </span>
+                        <span *ngIf="r.score <= 3" class="bg-red-500/10 text-red-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-red-500/25">
+                          🔴 {{ r.score }}/10 Cancel This
+                        </span>
+                      </ng-container>
+
                       <span *ngIf="sub.status === 'Want to Cancel'" class="bg-amber-500/10 text-amber-400 text-[10px] px-2.5 py-0.5 rounded-full font-bold border border-amber-500/25">
                         Want to Cancel
                       </span>
@@ -129,12 +154,12 @@ Chart.register(...registerables);
                     <p class="text-xs sm:text-sm text-gray-400">/ {{ sub.billingCycle }}</p>
                   </div>
                   <div class="flex items-center space-x-2">
-                    <button *ngIf="sub.status !== 'Inactive'" (click)="openCancelAssistant(sub)" class="text-amber-500 hover:text-amber-400 p-2" title="Cancel Assistant">
+                    <button *ngIf="sub.status !== 'Inactive'" (click)="openCancelAssistant(sub); $event.stopPropagation()" class="text-amber-500 hover:text-amber-400 p-2" title="Cancel Assistant">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                       </svg>
                     </button>
-                    <button (click)="deleteSub(sub.id)" class="text-red-500 hover:text-red-400 p-2" title="Delete Permanent">
+                    <button (click)="deleteSub(sub.id); $event.stopPropagation()" class="text-red-500 hover:text-red-400 p-2" title="Delete Permanent">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                       </svg>
@@ -143,17 +168,19 @@ Chart.register(...registerables);
                 </div>
               </div>
               <div *ngIf="filteredSubscriptions.length === 0" class="p-8 text-center text-gray-500">
-                No subscriptions found. Click "Add Subscription" or adjust filters to see results!
+                No subscriptions found. Click "+ Add Subscription" or adjust filters to see results!
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Right Section: Spend Analytics Chart (Col Span 4) -->
+        <!-- Right Section: Spend Analytics Chart & ROI Report (Col Span 4) -->
         <div class="lg:col-span-4 space-y-6">
-          <div class="glass-card p-6 flex flex-col justify-between h-[380px] border border-gray-700/50 shadow-2xl relative overflow-hidden">
+          
+          <!-- Category breakdown chart card -->
+          <div class="glass-card p-6 flex flex-col justify-between h-[360px] border border-gray-700/50 shadow-2xl relative overflow-hidden">
             <h3 class="text-lg font-bold text-white mb-4">Spend Breakdown</h3>
-            <div class="relative flex-1 flex items-center justify-center min-h-[220px]">
+            <div class="relative flex-1 flex items-center justify-center min-h-[200px]">
               <canvas *ngIf="chartData && chartData.datasets[0].data.length > 0"
                 baseChart
                 [data]="chartData"
@@ -169,12 +196,110 @@ Chart.register(...registerables);
               </div>
             </div>
           </div>
+
+          <!-- AI ROI Report Summary Panel -->
+          <div class="glass-card p-6 border border-gray-700/50 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-24 h-24 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-1.5">
+              <span>📊</span>
+              <span>AI Subscription ROI Report</span>
+            </h3>
+
+            <!-- Premium Loading Spinner -->
+            <div *ngIf="isLoadingRoiScores || roiScores.length === 0" class="py-8 text-center text-gray-400 flex flex-col items-center justify-center space-y-3">
+              <svg class="animate-spin h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              <span class="text-xs font-bold font-sans">Analyzing ROI scores...</span>
+            </div>
+
+            <!-- ROI Panels Content -->
+            <ng-container *ngIf="!isLoadingRoiScores && roiScores.length > 0">
+              <!-- Monthly Savings Capsule -->
+              <div class="p-3 bg-white/5 border border-white/5 rounded-2xl mb-5 flex items-center justify-between">
+                <div>
+                  <p class="text-[10px] text-gray-400 font-extrabold tracking-wider uppercase">Potential Monthly Savings</p>
+                  <p class="text-2xl font-black text-emerald-400">{{ potentialSavings | currency:userProfileCurrency }}</p>
+                </div>
+                <span class="text-2xl">💸</span>
+              </div>
+
+              <!-- Top Value Subs -->
+              <div class="mb-4">
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">⭐ Great Value Subscriptions</h4>
+                <div class="space-y-2">
+                  <div *ngFor="let item of topValueSubs" class="flex items-center justify-between text-xs p-2 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
+                    <span class="text-white font-semibold">{{ item.name }}</span>
+                    <span class="text-emerald-400 font-extrabold">{{ item.score }}/10</span>
+                  </div>
+                  <div *ngIf="topValueSubs.length === 0" class="text-xs text-gray-500 italic p-1">No great value subscriptions found. Log usage by clicking cards!</div>
+                </div>
+              </div>
+
+              <!-- Suggested Cancellations -->
+              <div>
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">🔴 Suggested Cancellations</h4>
+                <div class="space-y-2">
+                  <div *ngFor="let item of suggestedCancellations" class="flex items-center justify-between text-xs p-2 bg-red-500/5 border border-red-500/10 rounded-xl">
+                    <span class="text-white font-semibold text-left truncate max-w-[120px]">{{ item.name }}</span>
+                    <span class="text-red-400 font-extrabold text-right shrink-0">{{ item.score }}/10</span>
+                  </div>
+                  <div *ngIf="suggestedCancellations.length === 0" class="text-xs text-gray-500 italic p-1">No wasted subscriptions found. Great budget discipline!</div>
+                </div>
+              </div>
+            </ng-container>
+
+          </div>
+
         </div>
 
       </div>
     </div>
 
-    <!-- Add Modal -->
+    <!-- Onboarding Country Selector Modal (Mandatory UI pop-up driving Tax + Stripe payments) -->
+    <div *ngIf="showCountryModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+      <div class="glass-card w-full max-w-md p-6 relative border border-primary/20 shadow-2xl text-center">
+        <!-- Close/Dismiss button -->
+        <button (click)="showCountryModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white bg-transparent border-0 cursor-pointer text-lg font-black transition-colors focus:outline-none" title="Close">✕</button>
+
+        <!-- Top decorative glow -->
+        <div class="absolute -top-12 -left-12 w-28 h-28 bg-primary/25 rounded-full blur-2xl pointer-events-none"></div>
+
+        <h2 class="text-2xl font-black text-white mb-2">Configure Regional Profile 🌍</h2>
+        <p class="text-xs text-gray-400 leading-relaxed mb-6">
+          Please select your default country before managing subscriptions. This allows us to apply precise tax brackets and direct you to the most optimized payment gateway checkout.
+        </p>
+
+        <div class="space-y-4 text-left">
+          <label class="block text-xs font-black text-gray-400 uppercase tracking-widest">Select Your Country</label>
+          <select [(ngModel)]="selectedOnboardingCountry" class="w-full bg-[#090915] border border-gray-700/60 rounded-xl px-4 py-3 focus:outline-none focus:border-primary text-white text-sm cursor-pointer">
+            <option value="IN">🇮🇳 India (INR - ₹)</option>
+            <option value="US">🇺🇸 United States (USD - $)</option>
+            <option value="GB">🇬🇧 United Kingdom (GBP - £)</option>
+            <option value="DE">🇩🇪 Germany (EUR - €)</option>
+            <option value="FR">🇫🇷 France (EUR - €)</option>
+            <option value="AU">🇦🇺 Australia (AUD - A$)</option>
+            <option value="CA">🇨🇦 Canada (CAD - C$)</option>
+            <option value="SG">🇸🇬 Singapore (SGD - S$)</option>
+            <option value="AE">🇦🇪 United Arab Emirates (AED - د.إ)</option>
+            <option value="JP">🇯🇵 Japan (JPY - ¥)</option>
+            <option value="CH">🇨🇭 Switzerland (CHF - Fr)</option>
+            <option value="SE">🇸🇪 Sweden (SEK - kr)</option>
+            <option value="NO">🇳🇴 Norway (NOK - kr)</option>
+            <option value="DK">🇩🇰 Denmark (DKK - kr)</option>
+            <option value="NZ">🇳🇿 New Zealand (NZD - NZ$)</option>
+            <option value="BR">🇧🇷 Brazil (BRL - R$)</option>
+          </select>
+        </div>
+
+        <button (click)="saveOnboardingCountry()" class="w-full mt-8 bg-gradient-to-r from-primary to-accent hover:opacity-95 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg active:scale-95 cursor-pointer">
+          Confirm and Unlock Dashboard
+        </button>
+      </div>
+    </div>
+
+    <!-- Add Subscription Modal -->
     <div *ngIf="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div class="glass-card w-full max-w-md p-6 relative border border-gray-700/60 shadow-2xl">
         <button (click)="showAddModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white">
@@ -198,9 +323,21 @@ Chart.register(...registerables);
               <div>
                 <label class="block text-sm font-medium text-gray-400 mb-1">Currency</label>
                 <select formControlName="currency" class="w-full bg-[#090915] border border-gray-700 rounded-lg px-4 py-2 focus:outline-none focus:border-primary text-white">
-                  <option value="INR">INR</option>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
+                  <option value="INR">INR (₹)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="AUD">AUD (A$)</option>
+                  <option value="CAD">CAD (C$)</option>
+                  <option value="SGD">SGD (S$)</option>
+                  <option value="AED">AED (د.إ)</option>
+                  <option value="JPY">JPY (¥)</option>
+                  <option value="CHF">CHF (Fr)</option>
+                  <option value="SEK">SEK (kr)</option>
+                  <option value="NOK">NOK (kr)</option>
+                  <option value="DKK">DKK (kr)</option>
+                  <option value="NZD">NZD (NZ$)</option>
+                  <option value="BRL">BRL (R$)</option>
                 </select>
               </div>
             </div>
@@ -230,6 +367,71 @@ Chart.register(...registerables);
             Save Subscription
           </button>
         </form>
+      </div>
+    </div>
+
+    <!-- Gmail Ghost Subscription Detector Modal -->
+    <div *ngIf="showGmailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div class="glass-card w-full max-w-2xl p-6 relative border border-white/10 shadow-2xl">
+        <button (click)="showGmailModal = false" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <div class="flex items-center space-x-3 mb-4">
+          <span class="text-3xl">🔍</span>
+          <h2 class="text-2xl font-black text-white">Gmail Ghost Subscription Detector</h2>
+        </div>
+
+        <p class="text-sm text-gray-400 mb-6 leading-relaxed">
+          Connect your Gmail inbox to securely scan receipt email subjects from the last 90 days. We never store or read full email content, and your messages never leave the device.
+          <strong class="text-emerald-400 block mt-2">🔒 Privacy Notice: We only read receipt subjects, never body text or storage contents.</strong>
+        </p>
+
+        <!-- Scanning Actions -->
+        <div class="flex flex-wrap items-center gap-4 mb-6">
+          <button (click)="connectGmail()" class="bg-gradient-to-r from-red-600 to-amber-600 hover:opacity-95 text-white font-bold px-4 py-2 rounded-xl text-sm transition-all flex items-center space-x-2">
+            <span>🔴 Connect Gmail Inbox</span>
+          </button>
+
+          <button (click)="scanGmail()" [disabled]="isScanningGmail" class="bg-primary hover:bg-opacity-95 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all flex items-center space-x-2 shadow-lg shadow-primary/10">
+            <span *ngIf="isScanningGmail" class="animate-spin mr-1">🔄</span>
+            <span>Scan Receipt Emails</span>
+          </button>
+        </div>
+
+        <!-- Scan results progress spinner -->
+        <div *ngIf="isScanningGmail" class="py-12 text-center text-gray-400 flex flex-col items-center justify-center space-y-3">
+          <svg class="animate-spin h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          <span class="font-bold text-sm">Parsing receipt email subject metadata... Please wait</span>
+        </div>
+
+        <!-- Discovered ghost subscriptions cards list -->
+        <div *ngIf="!isScanningGmail && gmailScanResults.length > 0" class="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+          <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">We found {{ gmailScanResults.length }} untracked subscriptions:</h3>
+          <div *ngFor="let ghost of gmailScanResults" class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl gap-3">
+            <div class="text-left shrink-1 truncate">
+              <h4 class="text-white font-bold text-sm">{{ ghost.companyName }}</h4>
+              <p class="text-xs text-gray-500 font-semibold mt-0.5">Last Receipt Date: {{ ghost.lastSeen | date:'mediumDate' }}</p>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+              <!-- Inline Amount Field so the user can fill price manually -->
+              <input type="number" #amtInput placeholder="Price" class="w-20 bg-black/40 border border-gray-700/60 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-emerald-500 text-xs text-white placeholder-gray-600">
+              <button (click)="addDetectedSub(ghost, amtInput.value)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition-all shrink-0">
+                + Add Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="!isScanningGmail && gmailScanResults.length === 0" class="py-12 text-center text-gray-500 italic text-sm">
+          No untracked receipts found. Complete scan to audit receipts.
+        </div>
+
       </div>
     </div>
 
@@ -268,7 +470,7 @@ Chart.register(...registerables);
           </div>
         </div>
 
-        <button (click)="confirmCancellation()" class="w-full text-red-500 text-sm mt-6 hover:text-red-400 font-semibold transition text-center block">
+        <button (click)="confirmCancellation()" class="w-full text-red-500 text-sm mt-6 hover:text-red-400 font-semibold transition text-center block bg-transparent border-0">
           No thanks, cancel anyway & move to Graveyard →
         </button>
       </div>
@@ -281,6 +483,7 @@ export class DashboardComponent implements OnInit {
   showAddModal = false;
   subForm: FormGroup;
   activeUserPlan = 'free';
+  userProfileCurrency = 'INR';
 
   // Search & Filters state
   searchTerm = '';
@@ -289,6 +492,20 @@ export class DashboardComponent implements OnInit {
 
   // Currency Exchange Rates state
   exchangeRates: any = null;
+
+  // AI ROI Scoring state
+  roiScores: any[] = [];
+  potentialSavings = 0;
+  isLoadingRoiScores = false;
+
+  // Onboarding country selector state
+  showCountryModal = false;
+  selectedOnboardingCountry = 'US';
+
+  // Gmail scanning state
+  showGmailModal = false;
+  isScanningGmail = false;
+  gmailScanResults: any[] = [];
 
   // Chart properties
   public chartType: ChartType = 'doughnut';
@@ -318,7 +535,7 @@ export class DashboardComponent implements OnInit {
         callbacks: {
           label: (context: any) => {
             const val = context.raw as number;
-            return ` ₹${val.toFixed(2)}/mo`;
+            return ` ${this.userProfileCurrency} ${val.toFixed(2)}/mo`;
           }
         }
       }
@@ -347,7 +564,8 @@ export class DashboardComponent implements OnInit {
     private toastr: ToastrService,
     private auth: AuthService,
     private router: Router,
-    private seo: SeoService
+    private seo: SeoService,
+    private http: HttpClient
   ) {
     this.subForm = this.fb.group({
       name: ['', Validators.required],
@@ -361,17 +579,68 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit() {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    if (sessionId) {
+      console.log('Stripe redirect detected:', sessionId);
+      // Show success toast
+      this.showSuccessToast('Payment successful! Plan activated.');
+      // Clean URL
+      window.history.replaceState({}, '', '/dashboard');
+    }
+    // Then load dashboard normally - wrap in try/catch:
+    try {
+      this.loadDashboardData();
+    } catch(err) {
+      console.error('Dashboard load error:', err);
+    }
+
     this.seo.generateTags({
       title: 'Premium Analytics Dashboard',
-      description: 'Optimize your digital spending in one elegant visual hub. Track active subscriptions, renewals, category spend, and reclaim wasted money with SubTrackr.'
+      description: 'Optimize your digital spending in one elegant visual hub. Track active subscriptions, renewals, category spend, and reclaim wasted money with Vaultly.'
     });
-    this.loadData();
+    this.fetchRoiScores();
+
+    // --- CHROME EXTENSION ADDSUB PARAMETER INTERCEPTOR ---
+    const addSub = params.get('addSub');
+    if (addSub) {
+      this.showAddModal = true;
+      this.subForm.patchValue({
+        name: addSub,
+        currency: this.userProfileCurrency || 'INR',
+        billingCycle: 'Monthly',
+        category: 'Entertainment',
+        startDate: new Date().toISOString().split('T')[0],
+        status: 'Active'
+      });
+      // Clean query parameter from browser address bar to prevent reopening on reload
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+    
     this.auth.userProfile$.subscribe(profile => {
       if (profile) {
         this.activeUserPlan = profile.plan || 'free';
+        this.userProfileCurrency = profile.currency || 'INR';
+        this.subForm.patchValue({ currency: this.userProfileCurrency });
+        
+        // --- MANDATORY ONBOARDING SELECTOR ---
+        if (!profile.country && !sessionStorage.getItem('onboardingCountryModalShown')) {
+          this.showCountryModal = true;
+          sessionStorage.setItem('onboardingCountryModalShown', 'true');
+        }
       }
     });
+
     this.requestNotificationPermission();
+  }
+
+  showSuccessToast(msg: string) {
+    this.toastr.success(msg, 'Payment Successful');
+  }
+
+  loadDashboardData() {
+    this.loadData();
   }
 
   loadData() {
@@ -383,8 +652,12 @@ export class DashboardComponent implements OnInit {
         this.fetchSubscriptionsAndSum();
       },
       error: () => {
-        // Graceful fallback for offline usage
-        this.exchangeRates = { INR: 1, USD: 0.012, EUR: 0.011 };
+        // Dynamic full 15 currencies fallback rates
+        this.exchangeRates = {
+          INR: 1, USD: 0.012, EUR: 0.011, GBP: 0.0094, AUD: 0.018,
+          CAD: 0.016, SGD: 0.016, AED: 0.044, JPY: 1.88, CHF: 0.011,
+          SEK: 0.13, NOK: 0.13, DKK: 0.083, NZD: 0.020, BRL: 0.062
+        };
         this.fetchSubscriptionsAndSum();
       }
     });
@@ -396,8 +669,150 @@ export class DashboardComponent implements OnInit {
         this.subscriptions = res;
         this.calculateSummary();
         this.checkUpcomingRenewalsAndNotify();
+        
+        // Fetch AI ROI Scores reactively
+        this.fetchRoiScores();
       },
       error: () => this.toastr.error('Failed to load subscriptions')
+    });
+  }
+
+  // AI ROI Score Fetch
+  fetchRoiScores() {
+    this.isLoadingRoiScores = true;
+    this.http.get(`${environment.apiUrl}/api/analytics/roi-scores`).subscribe({
+      next: (res: any) => {
+        console.log('ROI Scores returned from API:', res);
+        this.roiScores = res || [];
+        this.calculateSavings();
+        this.isLoadingRoiScores = false;
+      },
+      error: (err) => {
+        console.error('Failed to load dynamic ROI scores:', err);
+        this.isLoadingRoiScores = false;
+      }
+    });
+  }
+
+  // Calculate potential savings (sum of score <= 3 subs)
+  calculateSavings() {
+    let savings = 0;
+    this.roiScores.forEach(s => {
+      if (s.score <= 3) {
+        let amount = parseFloat(s.amount) || 0;
+        // Convert to INR first to sum correctly, then convert to user default currency
+        const fromCurr = s.currency || 'INR';
+        const toCurr = this.userProfileCurrency;
+        
+        if (fromCurr !== toCurr && this.exchangeRates) {
+          const rateFrom = this.exchangeRates[fromCurr] || 1;
+          const rateTo = this.exchangeRates[toCurr] || 1;
+          const amountInINR = amount / rateFrom;
+          amount = amountInINR * rateTo;
+        }
+        savings += amount;
+      }
+    });
+    this.potentialSavings = savings;
+  }
+
+  getRoiScoreForSub(subId: string) {
+    return this.roiScores.find(r => r.subscriptionId === subId);
+  }
+
+  get topValueSubs(): any[] {
+    return [...this.roiScores].sort((a, b) => b.score - a.score).filter(s => s.score >= 8).slice(0, 3);
+  }
+
+  get suggestedCancellations(): any[] {
+    return [...this.roiScores].sort((a, b) => a.score - b.score).filter(s => s.score <= 3).slice(0, 3);
+  }
+
+  // Onboarding Country Selection Save
+  saveOnboardingCountry() {
+    this.toastr.info('Updating profile regions...');
+    this.auth.updateUserProfile({ country: this.selectedOnboardingCountry }).subscribe({
+      next: () => {
+        this.toastr.success('Profile region successfully updated!', 'Region Saved');
+        this.showCountryModal = false;
+        this.loadData();
+      },
+      error: () => this.toastr.error('Failed to update country settings.')
+    });
+  }
+
+  // Card row silent ping listener to track subscription activity
+  pingSubscription(subId: string) {
+    this.http.get(`${environment.apiUrl}/api/subscriptions/${subId}/ping`).subscribe({
+      next: () => {
+        // Silently refresh scores reactively
+        this.fetchRoiScores();
+      }
+    });
+  }
+
+  // Gmail scanner trigger modals
+  openGmailModal() {
+    this.showGmailModal = true;
+    this.gmailScanResults = [];
+  }
+
+  connectGmail() {
+    const profile = this.auth.userProfile$.value;
+    const userId = profile ? (profile.id || profile.uid) : 'state';
+    this.http.get(`${environment.apiUrl}/api/gmail/auth?userId=${userId}`).subscribe({
+      next: (res: any) => {
+        if (res && res.url) {
+          window.open(res.url, '_blank');
+          this.toastr.info('OAuth page opened. Complete authorization in the new tab!');
+        }
+      },
+      error: () => this.toastr.error('Failed to start Google authentication workflow.')
+    });
+  }
+
+  scanGmail() {
+    this.isScanningGmail = true;
+    this.gmailScanResults = [];
+    this.http.post(`${environment.apiUrl}/api/gmail/scan`, {}).subscribe({
+      next: (res: any) => {
+        this.gmailScanResults = res.ghosts || [];
+        this.isScanningGmail = false;
+        this.toastr.success(`Audited! Found ${this.gmailScanResults.length} unregistered digital subscriptions.`, 'Scan Completed');
+      },
+      error: (err: any) => {
+        this.isScanningGmail = false;
+        this.toastr.error(err?.error?.error || 'Gmail scanner check failed. Make sure your account is connected.');
+      }
+    });
+  }
+
+  addDetectedSub(ghost: any, amountValue: string) {
+    const amt = parseFloat(amountValue);
+    if (isNaN(amt) || amt <= 0) {
+      this.toastr.warning('Please enter a valid monthly price amount.');
+      return;
+    }
+
+    const payload = {
+      name: ghost.companyName,
+      amount: amt,
+      currency: this.userProfileCurrency,
+      billingCycle: 'Monthly',
+      category: 'Entertainment',
+      startDate: ghost.lastSeen ? ghost.lastSeen.split('T')[0] : new Date().toISOString().split('T')[0]
+    };
+
+    this.toastr.info(`Saving ${ghost.companyName}...`);
+    this.http.post(`${environment.apiUrl}/api/gmail/add-detected`, payload).subscribe({
+      next: () => {
+        this.toastr.success(`Success! Added ${ghost.companyName} to dashboard tracking.`, 'Receipt Synced');
+        this.gmailScanResults = this.gmailScanResults.filter(g => g.companyName !== ghost.companyName);
+        this.loadData();
+      },
+      error: (err: any) => {
+        this.toastr.error(err?.error?.error || 'Failed to register receipt subscription.');
+      }
     });
   }
 
@@ -406,12 +821,19 @@ export class DashboardComponent implements OnInit {
     let activeCount = 0;
 
     this.subscriptions.forEach(s => {
-      if (s.status === 'Active') {
+      if (s.status === 'Active' || s.status === 'active') {
         activeCount++;
         let amount = parseFloat(s.amount);
 
-        if (s.currency && s.currency !== 'INR' && this.exchangeRates && this.exchangeRates[s.currency]) {
-          amount = amount / this.exchangeRates[s.currency];
+        // Convert dynamically to profile default currency
+        const fromCurr = s.currency || 'INR';
+        const toCurr = this.userProfileCurrency;
+        
+        if (fromCurr !== toCurr && this.exchangeRates) {
+          const rateFrom = this.exchangeRates[fromCurr] || 1;
+          const rateTo = this.exchangeRates[toCurr] || 1;
+          const amountInINR = amount / rateFrom;
+          amount = amountInINR * rateTo;
         }
 
         if (s.billingCycle === 'Yearly') amount /= 12;
@@ -430,10 +852,26 @@ export class DashboardComponent implements OnInit {
     this.updateCategoryChart();
   }
 
+  getPlanLimit(plan: string): number {
+    if (plan === 'free') return 3;
+    if (plan === 'student') return 6;
+    if (plan === 'pro') return 20;
+    return Infinity;
+  }
+
+  getPlanDisplayName(plan: string): string {
+    if (plan === 'free') return 'Starter Free';
+    if (plan === 'student') return 'Student Saver';
+    if (plan === 'pro') return 'Premium Pro';
+    if (plan === 'family') return 'Shared Family';
+    if (plan === 'corporate') return 'Corporate Plan';
+    return 'Premium';
+  }
+
   openAddModal() {
-    const limit = this.activeUserPlan === 'free' ? 3 : (this.activeUserPlan === 'pro' ? 15 : Infinity);
+    const limit = this.getPlanLimit(this.activeUserPlan);
     if (this.subscriptions.length >= limit) {
-      this.toastr.warning(`Your ${this.activeUserPlan === 'free' ? 'Starter Free' : 'Premium Pro'} plan is limited to ${limit} subscriptions. Please upgrade to a higher tier!`, 'Limit Reached!');
+      this.toastr.warning(`Your ${this.getPlanDisplayName(this.activeUserPlan)} plan is limited to ${limit} subscriptions. Please upgrade to a higher tier!`, 'Limit Reached!');
       this.router.navigate(['/pricing']);
       return;
     }
@@ -442,16 +880,14 @@ export class DashboardComponent implements OnInit {
 
   onSubmit() {
     if (this.subForm.valid) {
-      const limit = this.activeUserPlan === 'free' ? 3 : (this.activeUserPlan === 'pro' ? 15 : Infinity);
+      const limit = this.getPlanLimit(this.activeUserPlan);
       if (this.subscriptions.length >= limit) {
-        this.toastr.warning(`Your ${this.activeUserPlan === 'free' ? 'Starter Free' : 'Premium Pro'} plan is limited to ${limit} subscriptions. Please upgrade to a higher tier!`, 'Limit Reached!');
+        this.toastr.warning(`Your ${this.getPlanDisplayName(this.activeUserPlan)} plan is limited to ${limit} subscriptions. Please upgrade to a higher tier!`, 'Limit Reached!');
         this.router.navigate(['/pricing']);
         return;
       }
 
-
       const data = { ...this.subForm.value };
-      // auto calc renewal date
       const d = new Date(data.startDate);
       if (data.billingCycle === 'Monthly') d.setMonth(d.getMonth() + 1);
       if (data.billingCycle === 'Yearly') d.setFullYear(d.getFullYear() + 1);
@@ -465,13 +901,13 @@ export class DashboardComponent implements OnInit {
           this.toastr.success('Subscription added');
           this.showAddModal = false;
           this.subForm.reset({
-            currency: 'INR', billingCycle: 'Monthly', category: 'Entertainment', 
+            currency: this.userProfileCurrency, billingCycle: 'Monthly', category: 'Entertainment', 
             startDate: new Date().toISOString().split('T')[0], status: 'Active'
           });
           this.loadData();
         },
         error: (err: any) => {
-          this.toastr.error(err?.error?.error || 'Failed to add subscription. Are you logged in?');
+          this.toastr.error(err?.error?.error || 'Failed to add subscription.');
         }
       });
     }
@@ -577,7 +1013,7 @@ export class DashboardComponent implements OnInit {
     const twoDaysFromNow = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
 
     const upcoming = this.subscriptions.filter(sub => {
-      if (sub.status !== 'Active') return false;
+      if (sub.status !== 'Active' && sub.status !== 'active') return false;
       const renewal = new Date(sub.renewalDate);
       return renewal > now && renewal <= twoDaysFromNow;
     });
@@ -610,12 +1046,18 @@ export class DashboardComponent implements OnInit {
     let totalActiveAmount = 0;
 
     this.subscriptions.forEach(s => {
-      if (s.status === 'Active') {
+      if (s.status === 'Active' || s.status === 'active') {
         let amount = parseFloat(s.amount);
 
-        // Convert to INR if different
-        if (s.currency && s.currency !== 'INR' && this.exchangeRates && this.exchangeRates[s.currency]) {
-          amount = amount / this.exchangeRates[s.currency];
+        // Convert dynamically to profile default currency
+        const fromCurr = s.currency || 'INR';
+        const toCurr = this.userProfileCurrency;
+        
+        if (fromCurr !== toCurr && this.exchangeRates) {
+          const rateFrom = this.exchangeRates[fromCurr] || 1;
+          const rateTo = this.exchangeRates[toCurr] || 1;
+          const amountInINR = amount / rateFrom;
+          amount = amountInINR * rateTo;
         }
 
         if (s.billingCycle === 'Yearly') amount /= 12;

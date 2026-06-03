@@ -33,7 +33,7 @@ import { environment } from '../../../../environments/environment';
             <!-- Logo & Greeting -->
             <div class="text-center mb-8">
               <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-accent via-primary to-accent tracking-tight">Get Started</h1>
-              <p class="text-gray-400 text-sm mt-2 font-medium">Join SubTrackr today & stay optimized.</p>
+              <p class="text-gray-400 text-sm mt-2 font-medium">Join Vaultly today & stay optimized.</p>
             </div>
 
             <!-- Alerts -->
@@ -152,10 +152,10 @@ import { environment } from '../../../../environments/environment';
             <span class="px-3 py-1 text-xs font-semibold rounded-full bg-primary/10 border border-primary/20 text-primary uppercase tracking-wider">Graveyard Feature Spotlight</span>
             <h2 class="text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
               Bury Unused Subscriptions<br>
-              <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">In the SubTrackr Graveyard</span>
+              <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">In the Vaultly Graveyard</span>
             </h2>
             <p class="text-gray-400 text-lg leading-relaxed max-w-md font-medium">
-              Easily catalog canceled subscriptions inside the SubTrackr Graveyard to visualize your reclaimed yearly waste and celebrate savings.
+              Easily catalog canceled subscriptions inside the Vaultly Graveyard to visualize your reclaimed yearly waste and celebrate savings.
             </p>
           </div>
 
@@ -250,7 +250,7 @@ export class RegisterComponent implements OnInit {
   ngOnInit() {
     this.seo.generateTags({
       title: 'Create Free Account',
-      description: 'Join SubTrackr today. Reclaim control of your digital subscriptions, get push alerts for upcoming renewals, and prevent hidden price hikes.'
+      description: 'Join Vaultly today. Reclaim control of your digital subscriptions, get push alerts for upcoming renewals, and prevent hidden price hikes.'
     });
   }
 

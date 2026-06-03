@@ -11,9 +11,115 @@ const sgMail = require('@sendgrid/mail');
 const Razorpay = require('razorpay');
 const axios = require('axios');
 const rateLimit = require('express-rate-limit');
+const currencyService = require('./services/currency.service');
+const taxService = require('./services/tax.service');
 
 const app = express();
 app.use(cors());
+
+// Stripe Webhook Endpoint (MUST be configured BEFORE express.json() body parsing!)
+app.post('/api/payment/stripe/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    console.log('🔔 WEBHOOK HIT');
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    
+    let event;
+    try {
+      const sig = req.headers['stripe-signature'];
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+    } catch (err) {
+      console.error('❌ Webhook signature failed:', err.message);
+      return res.status(400).send('Webhook Error: ' + err.message);
+    }
+
+    console.log('✅ Event type:', event.type);
+
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      console.log('💰 PAYMENT COMPLETE!');
+      console.log('Metadata:', JSON.stringify(session.metadata));
+      console.log('Customer:', session.customer);
+      console.log('Email:', session.customer_email);
+
+      const userId = session.metadata?.userId;
+      const planId = session.metadata?.planId;
+      
+      console.log('userId:', userId);
+      console.log('planId:', planId);
+
+      if (userId && planId) {
+        try {
+          await updateUserPlan(userId, planId, undefined, session.subscription, session.customer);
+          console.log('✅ Plan updated:', userId, '->', planId);
+        } catch(updateErr) {
+          console.error('❌ Plan update failed:', updateErr.message);
+        }
+      } else {
+        console.log('❌ metadata missing - searching by customer...');
+        // Find user by stripeCustomerId
+        try {
+          const allUsers = inMemoryDB.users || [];
+          const user = allUsers.find(
+            u => u.stripeCustomerId === session.customer
+          );
+          if (user) {
+            console.log('Found user by customerId:', user.id);
+            // Get planId from subscription metadata
+            const subId = session.subscription;
+            if (subId) {
+              const subscription = await stripe.subscriptions.retrieve(subId);
+              const subPlanId = subscription.metadata?.planId || 'pro_monthly';
+              console.log('Plan from subscription:', subPlanId);
+              await updateUserPlan(user.id, subPlanId, undefined, subId, session.customer);
+              console.log('✅ Plan updated via customer lookup');
+            }
+          } else {
+            console.log('❌ User not found by customerId either');
+          }
+        } catch(lookupErr) {
+          console.error('Lookup error:', lookupErr.message);
+        }
+      }
+    }
+
+    if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object;
+      const subId = subscription.id;
+
+      // Find user by subscription ID
+      let user = null;
+      let found = false;
+      if (dbType === 'firestore') {
+        try {
+          const snapshot = await db.collection('users').where('stripeSubscriptionId', '==', subId).limit(1).get();
+          if (!snapshot.empty) {
+            user = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+            found = true;
+          }
+        } catch (err) {
+          console.error('⚠️ Firestore Stripe find by subId failed:', err.message);
+        }
+      }
+
+      if (!found) {
+        user = inMemoryDB.users.find(u => u && u.stripeSubscriptionId === subId);
+      }
+
+      if (user) {
+        await downgradeUserToFree(user.id);
+        console.log(`[STRIPE DELETED] Webhook downgraded user ${user.id} to free`);
+      }
+    }
+
+    res.json({ received: true });
+  }
+);
+
 app.use(express.json({
   limit: '10mb',
   verify: (req, res, buf) => {
@@ -57,7 +163,15 @@ const authLimiter = rateLimit({
   message: { error: 'Too many attempts. Try again in 15 minutes.' }
 });
 
-app.use('/api/auth/', authLimiter);
+const captchaLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many captcha verification attempts. Please try again later.' }
+});
+
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/verify-captcha', captchaLimiter);
 app.use('/api/whatsapp/test', whatsappLimiter);
 app.use('/api/', apiLimiter);
 
@@ -245,8 +359,15 @@ const saveLocalDB = () => {
   }
 };
 
+// Remove undefined fields before Firestore save
+function removeUndefined(obj) {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined)
+  );
+}
+
 // --- DATABASE PLAN HELPERS ---
-const updateUserPlan = async (userId, planKey, razorpaySubscriptionId) => {
+const updateUserPlan = async (userId, planKey, razorpaySubscriptionId, stripeSubscriptionId, stripeCustomerId) => {
   const planName = planKey.includes('corporate') ? 'corporate' : (planKey.includes('family') ? 'family' : (planKey.includes('student') ? 'student' : 'pro'));
   const durationDays = planKey.includes('yearly') ? 365 : 30;
   const planExpiry = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
@@ -254,12 +375,15 @@ const updateUserPlan = async (userId, planKey, razorpaySubscriptionId) => {
   let success = false;
   if (dbType === 'firestore') {
     try {
-      await db.collection('users').doc(userId).set({
+      const cleanData = removeUndefined({
         plan: planName,
         planExpiry: planExpiry,
         razorpaySubscriptionId: razorpaySubscriptionId,
+        stripeSubscriptionId: stripeSubscriptionId,
+        stripeCustomerId: stripeCustomerId,
         updatedAt: new Date()
-      }, { merge: true });
+      });
+      await db.collection('users').doc(userId).update(cleanData);
       success = true;
     } catch (err) {
       console.error('⚠️ Firestore updateUserPlan failed, falling back to memory:', err.message);
@@ -274,7 +398,9 @@ const updateUserPlan = async (userId, planKey, razorpaySubscriptionId) => {
     }
     user.plan = planName;
     user.planExpiry = planExpiry;
-    user.razorpaySubscriptionId = razorpaySubscriptionId;
+    if (razorpaySubscriptionId !== undefined) user.razorpaySubscriptionId = razorpaySubscriptionId;
+    if (stripeSubscriptionId !== undefined) user.stripeSubscriptionId = stripeSubscriptionId;
+    if (stripeCustomerId !== undefined) user.stripeCustomerId = stripeCustomerId;
     user.updatedAt = new Date();
     saveLocalDB();
   }
@@ -325,6 +451,33 @@ const findUserBySubscriptionId = async (subscriptionId) => {
   return inMemoryDB.users.find(u => u.razorpaySubscriptionId === subscriptionId) || null;
 };
 
+const updateUserStripeCustomer = async (userId, stripeCustomerId) => {
+  let success = false;
+  if (dbType === 'firestore') {
+    try {
+      await db.collection('users').doc(userId).set({
+        stripeCustomerId,
+        updatedAt: new Date()
+      }, { merge: true });
+      success = true;
+    } catch (err) {
+      console.error('⚠️ Firestore updateUserStripeCustomer failed, falling back to memory:', err.message);
+    }
+  }
+
+  // Always keep a warm copy in memory database
+  let user = inMemoryDB.users.find(u => u && u.id === userId);
+  if (!user) {
+    user = { id: userId, createdAt: new Date() };
+    inMemoryDB.users.push(user);
+  }
+  user.stripeCustomerId = stripeCustomerId;
+  user.updatedAt = new Date();
+  saveLocalDB();
+  console.log(`Stripe customer ID updated to ${stripeCustomerId} for user ${userId}`);
+};
+
+
 // Middleware for auth
 const authenticate = async (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -366,6 +519,16 @@ const authenticate = async (req, res, next) => {
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
   }
+};
+
+const resolveName = (user) => {
+  if (user.name) return user.name;
+  if (user.displayName) return user.displayName;
+  if (user.email) {
+    const parts = user.email.split('@')[0].split(/[\.\-_]/);
+    return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  }
+  return 'User';
 };
 
 // --- AUTH ROUTES ---
@@ -807,7 +970,7 @@ app.get('/api/auth/profile', authenticate, async (req, res) => {
           const defaultUser = {
             id: req.user.id,
             email: req.user.email,
-            name: req.user.name || 'User',
+            name: resolveName(req.user),
             plan: 'free',
             planExpiry: null,
             createdAt: new Date(),
@@ -832,7 +995,7 @@ app.get('/api/auth/profile', authenticate, async (req, res) => {
       user = {
         id: req.user.id,
         email: req.user.email,
-        name: req.user.name || 'User',
+        name: resolveName(req.user),
         plan: 'free',
         planExpiry: null,
         createdAt: new Date(),
@@ -861,7 +1024,7 @@ app.get('/api/auth/profile', authenticate, async (req, res) => {
 });
 
 app.put('/api/auth/profile', authenticate, async (req, res) => {
-  const { name, photoURL, currency, phone, whatsappEnabled, whatsappPreferences } = req.body;
+  const { name, photoURL, currency, country, phone, whatsappEnabled, whatsappPreferences } = req.body;
   const userId = req.user.id;
   
   try {
@@ -869,6 +1032,7 @@ app.put('/api/auth/profile', authenticate, async (req, res) => {
     if (name !== undefined) updateData.name = name;
     if (photoURL !== undefined) updateData.photoURL = photoURL;
     if (currency !== undefined) updateData.currency = currency;
+    if (country !== undefined) updateData.country = country;
     if (phone !== undefined) updateData.phone = phone;
     if (whatsappEnabled !== undefined) updateData.whatsappEnabled = whatsappEnabled;
     if (whatsappPreferences !== undefined) updateData.whatsappPreferences = whatsappPreferences;
@@ -891,6 +1055,7 @@ app.put('/api/auth/profile', authenticate, async (req, res) => {
     if (name !== undefined) user.name = name;
     if (photoURL !== undefined) user.photoURL = photoURL;
     if (currency !== undefined) user.currency = currency;
+    if (country !== undefined) user.country = country;
     if (phone !== undefined) user.phone = phone;
     if (whatsappEnabled !== undefined) user.whatsappEnabled = whatsappEnabled;
     if (whatsappPreferences !== undefined) user.whatsappPreferences = whatsappPreferences;
@@ -919,50 +1084,221 @@ app.put('/api/auth/profile', authenticate, async (req, res) => {
 // --- MONETIZATION PLANS ---
 const PLANS = {
   pro_monthly: {
-    id: process.env.RAZORPAY_PRO_MONTHLY_PLAN_ID,
-    name: 'SubTrackr Pro Monthly',
+    id: process.env.RAZORPAY_PRO_MONTHLY_PLAN_ID || process.env.RAZORPAY_PLAN_PRO_MONTHLY,
+    name: 'Vaultly Pro Monthly',
     amount: 9900,  // ₹99 in paise
     interval: 1,
     period: 'monthly'
   },
   pro_yearly: {
-    id: process.env.RAZORPAY_PRO_YEARLY_PLAN_ID,
-    name: 'SubTrackr Pro Yearly',
+    id: process.env.RAZORPAY_PRO_YEARLY_PLAN_ID || process.env.RAZORPAY_PLAN_PRO_YEARLY,
+    name: 'Vaultly Pro Yearly',
     amount: 79900, // ₹799 in paise
+    interval: 1,
+    period: 'yearly'
+  },
+  student_monthly: {
+    id: process.env.RAZORPAY_STUDENT_MONTHLY_PLAN_ID,
+    stripePriceId: process.env.STRIPE_PRICE_STUDENT_MONTHLY,
+    name: 'Vaultly Student Monthly',
+    amount: 4900,  // ₹49 in paise
+    interval: 1,
+    period: 'monthly'
+  },
+  student_yearly: {
+    id: process.env.RAZORPAY_STUDENT_YEARLY_PLAN_ID,
+    stripePriceId: process.env.STRIPE_PRICE_STUDENT_YEARLY,
+    name: 'Vaultly Student Yearly',
+    amount: 39900, // ₹399 in paise
     interval: 1,
     period: 'yearly'
   },
   family_monthly: {
     id: process.env.RAZORPAY_FAMILY_MONTHLY_PLAN_ID,
-    name: 'SubTrackr Family Monthly',
+    name: 'Vaultly Family Monthly',
     amount: 19900, // ₹199 in paise
     interval: 1,
     period: 'monthly'
   },
   family_yearly: {
     id: process.env.RAZORPAY_FAMILY_YEARLY_PLAN_ID,
-    name: 'SubTrackr Family Yearly',
+    name: 'Vaultly Family Yearly',
     amount: 149900, // ₹1499 in paise
     interval: 1,
     period: 'yearly'
   },
   corporate_monthly: {
     id: process.env.RAZORPAY_CORPORATE_MONTHLY_PLAN_ID,
-    name: 'SubTrackr Corporate Monthly',
+    name: 'Vaultly Corporate Monthly',
     amount: 99900, // ₹999 in paise
     interval: 1,
     period: 'monthly'
   },
   corporate_yearly: {
     id: process.env.RAZORPAY_CORPORATE_YEARLY_PLAN_ID,
-    name: 'SubTrackr Corporate Yearly',
+    name: 'Vaultly Corporate Yearly',
     amount: 799900, // ₹7999 in paise
     interval: 1,
     period: 'yearly'
   }
 };
 
-// --- PAYMENT (RAZORPAY SUBSCRIPTIONS) ---
+// --- PAYMENT (RAZORPAY & STRIPE SUBSCRIPTIONS) ---
+
+// Create Stripe Subscription Plan Checkout Session
+app.post('/api/payment/stripe/subscribe', authenticate, async (req, res) => {
+  try {
+    const { planId, userEmail, country } = req.body;
+    const userId = req.user.id;
+
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+    // Map plans to Stripe Price IDs
+    const planMap = {
+      'pro_monthly': process.env.STRIPE_PRICE_PRO,
+      'pro_yearly': process.env.STRIPE_PRICE_PRO,
+      'solo_monthly': process.env.STRIPE_PRICE_SOLO,
+      'team_monthly': process.env.STRIPE_PRICE_TEAM,
+      'student_monthly': process.env.STRIPE_PRICE_STUDENT_MONTHLY,
+      'student_yearly': process.env.STRIPE_PRICE_STUDENT_YEARLY,
+      'family_monthly': process.env.STRIPE_PRICE_TEAM,
+      'family_yearly': process.env.STRIPE_PRICE_TEAM,
+      'corporate_monthly': process.env.STRIPE_PRICE_TEAM,
+      'corporate_yearly': process.env.STRIPE_PRICE_TEAM
+    };
+
+    const priceId = planMap[planId];
+    console.log('PriceId for plan:', planId, '->', priceId);
+    if (!priceId) {
+      return res.status(400).json({ error: 'Invalid plan: ' + planId });
+    }
+
+    // 1. Get or Create Stripe Customer ID
+    let user = null;
+    let fetched = false;
+    if (dbType === 'firestore') {
+      try {
+        const doc = await db.collection('users').doc(userId).get();
+        if (doc.exists) {
+          user = doc.data();
+          fetched = true;
+        }
+      } catch (err) {
+        console.error('⚠️ Firestore Stripe user fetch failed:', err.message);
+      }
+    }
+
+    if (!fetched) {
+      user = inMemoryDB.users.find(u => u && u.id === userId);
+    }
+
+    let stripeCustomerId = user ? user.stripeCustomerId : null;
+
+    // Always verify customer exists in current Stripe account
+    if (stripeCustomerId) {
+      try {
+        await stripe.customers.retrieve(stripeCustomerId);
+      } catch (customerErr) {
+        // Customer not found in this Stripe account
+        // Clear the stale ID and create a new one
+        console.log('Stale customer ID detected, creating new customer...');
+        stripeCustomerId = null;
+      }
+    }
+
+    // Create new customer if needed
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: userEmail || req.user.email,
+        metadata: { userId: userId }
+      });
+      stripeCustomerId = customer.id;
+      // Save new customer ID to database
+      await updateUserStripeCustomer(userId, stripeCustomerId);
+    }
+
+
+    const session = await stripe.checkout.sessions.create({
+      customer: stripeCustomerId,
+      payment_method_types: ['card'],
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      metadata: {
+        userId: req.user.id,
+        planId: planId
+      },
+      subscription_data: {
+        metadata: {
+          userId: req.user.id,
+          planId: planId
+        }
+      },
+      success_url: `${process.env.FRONTEND_URL || 'http://localhost:4200'}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:4200'}/pricing`,
+    });
+
+    console.log('Session created:', session.id);
+    console.log('Session metadata:', session.metadata);
+
+
+    console.log('Stripe checkout URL:', session.url);
+    return res.json({ 
+      success: true, 
+      checkoutUrl: session.url 
+    });
+  } catch(err) {
+    console.error('Stripe FULL error:', err);
+    console.error('Stripe error type:', err.type);
+    console.error('Stripe error code:', err.code);
+    console.error('Stripe error message:', err.message);
+    return res.status(500).json({ 
+      error: 'Stripe checkout failed', 
+      details: err.message,
+      code: err.code
+    });
+  }
+});
+
+// Cancel Stripe Subscription
+app.post('/api/payment/stripe/cancel', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    let user = null;
+    let fetched = false;
+
+    if (dbType === 'firestore') {
+      try {
+        const doc = await db.collection('users').doc(userId).get();
+        if (doc.exists) {
+          user = doc.data();
+          fetched = true;
+        }
+      } catch (err) {
+        console.error('⚠️ Firestore user fetch failed:', err.message);
+      }
+    }
+
+    if (!fetched) {
+      user = inMemoryDB.users.find(u => u && u.id === userId);
+    }
+
+    const subId = user ? user.stripeSubscriptionId : null;
+
+    if (subId && !subId.startsWith('sub_mock_') && process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY !== 'dummy') {
+      try {
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+        await stripe.subscriptions.cancel(subId);
+      } catch (err) {
+        console.warn('Stripe subscription cancellation failed (might be already cancelled):', err.message);
+      }
+    }
+
+    await downgradeUserToFree(userId);
+    res.json({ success: true, message: 'Subscription successfully cancelled.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Create Razorpay Subscription Plan Checkout Session
 app.post('/api/payment/subscribe', authenticate, async (req, res) => {
@@ -978,7 +1314,6 @@ app.post('/api/payment/subscribe', authenticate, async (req, res) => {
     let subscription;
 
     try {
-      // Only call Razorpay API if keys are not 'dummy'
       if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_ID !== 'dummy') {
         subscription = await razorpay.subscriptions.create({
           plan_id: planId,
@@ -1024,11 +1359,11 @@ app.post('/api/payment/verify', authenticate, async (req, res) => {
     const { razorpay_subscription_id, razorpay_payment_id, razorpay_signature, plan } = req.body;
     const userId = req.user.id;
 
-    // Check signature
     let isValid = false;
     if (razorpay_subscription_id?.startsWith('sub_mock_') || process.env.RAZORPAY_KEY_SECRET === 'dummy' || !process.env.RAZORPAY_KEY_SECRET) {
-      isValid = true; // sandbox verify
+      isValid = true;
     } else {
+      const crypto = require('crypto');
       const body = razorpay_payment_id + '|' + razorpay_subscription_id;
       const expectedSignature = crypto
         .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
@@ -1048,9 +1383,7 @@ app.post('/api/payment/verify', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Invalid payment signature' });
     }
 
-    // Activate the subscription in DB
     await updateUserPlan(userId, plan, razorpay_subscription_id);
-
     res.json({ success: true, message: 'Plan activated successfully!' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1072,8 +1405,149 @@ app.post('/api/payment/cancel', authenticate, async (req, res) => {
     }
 
     await downgradeUserToFree(userId);
-
     res.json({ success: true, message: 'Subscription successfully cancelled.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- PING & AI ROI-SCORES ROUTES ---
+
+// Ping subscription cards to log usage
+app.get('/api/subscriptions/:id/ping', authenticate, async (req, res) => {
+  try {
+    const subId = req.params.id;
+    const updateData = { lastUsedAt: new Date().toISOString() };
+
+    let success = false;
+    if (dbType === 'firestore') {
+      try {
+        await db.collection('subscriptions').doc(subId).update(updateData);
+        success = true;
+      } catch (err) {
+        console.error('⚠️ Firestore ping update failed:', err.message);
+      }
+    }
+
+    const index = inMemoryDB.subscriptions.findIndex(s => s && s.id === subId && s.userId === req.user.id);
+    if (index !== -1) {
+      inMemoryDB.subscriptions[index].lastUsedAt = updateData.lastUsedAt;
+      saveLocalDB();
+      success = true;
+    }
+
+    if (!success) {
+      return res.status(404).json({ error: 'Subscription not found' });
+    }
+
+    res.json({ success: true, lastUsedAt: updateData.lastUsedAt });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Calculate ROI Scores (1-10) dynamically
+app.get('/api/analytics/roi-scores', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Fetch subscriptions
+    let subs = [];
+    if (dbType === 'firestore') {
+      const snapshot = await db.collection('subscriptions').where('userId', '==', userId).get();
+      snapshot.forEach(doc => subs.push({ id: doc.id, ...doc.data() }));
+    } else {
+      subs = inMemoryDB.subscriptions.filter(s => s && s.userId === userId);
+    }
+
+    const results = [];
+
+    for (const sub of subs) {
+      let usagePoints = 0;
+      let costPoints = 0;
+      let statusPoints = 0;
+
+      // a) Usage Points based on lastUsedAt
+      const lastUsed = sub.lastUsedAt;
+      let diffDays = Infinity;
+      if (lastUsed) {
+        const diffMs = Date.now() - new Date(lastUsed).getTime();
+        diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      }
+
+      if (diffDays === 0) {
+        usagePoints = 4; // Used today
+      } else if (diffDays <= 7) {
+        usagePoints = 3; // Used this week
+      } else if (diffDays <= 30) {
+        usagePoints = 2; // Used this month
+      } else {
+        usagePoints = 0; // Not used in 30+ days
+      }
+
+      // b) Cost Points based on USD converted cost
+      let amount = parseFloat(sub.amount) || 0;
+      const billingCycle = (sub.billingCycle || 'Monthly').toLowerCase();
+      
+      // Normalize billing cycle to monthly
+      if (billingCycle === 'yearly') amount = amount / 12;
+      else if (billingCycle === 'weekly') amount = amount * 4;
+
+      // Convert pricing dynamically to USD via currency service
+      const amountInUSD = await currencyService.convertAmount(amount, sub.currency || 'INR', 'USD');
+
+      if (amountInUSD < 5) {
+        costPoints = 3;
+      } else if (amountInUSD >= 5 && amountInUSD <= 20) {
+        costPoints = 2;
+      } else if (amountInUSD > 20 && amountInUSD <= 50) {
+        costPoints = 1;
+      } else {
+        costPoints = 0;
+      }
+
+      // c) Status Points
+      const status = sub.status || 'Active';
+      if (status === 'Active' || status === 'active') {
+        statusPoints = 2;
+      } else if (status === 'Want to Cancel') {
+        statusPoints = 0;
+      } else {
+        statusPoints = -1; // Inactive
+      }
+
+      // Calculate score with +1 offset and clamp
+      const rawScore = usagePoints + costPoints + statusPoints;
+      const score = Math.min(10, Math.max(1, rawScore + 1));
+
+      // Tailored recommendation and reasoning strings
+      let reason = '';
+      let recommendation = '';
+
+      if (score >= 8) {
+        reason = `Highly cost efficient and regularly used.`;
+        recommendation = `Daily use detected — Great value! Keep it.`;
+      } else if (score >= 4) {
+        const dayStr = diffDays === Infinity ? '30+' : diffDays;
+        reason = `Not actively used recently (last seen ${dayStr} days ago).`;
+        recommendation = `Not used in ${dayStr} days — Consider pausing.`;
+      } else {
+        reason = `Extremely high cost or completely neglected usage patterns.`;
+        recommendation = `Rarely used + high cost — Cancel this.`;
+      }
+
+      results.push({
+        subscriptionId: sub.id,
+        name: sub.name,
+        amount: sub.amount,
+        currency: sub.currency || 'INR',
+        score,
+        reason,
+        recommendation
+      });
+    }
+
+    res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1139,11 +1613,13 @@ app.post('/api/payment/webhook', async (req, res) => {
   }
 });
 
-// --- B2B CORPORATE & WHATSAPP ROUTERS ---
+// --- B2B CORPORATE, WHATSAPP, & GMAIL ROUTERS ---
 const organizationRoutes = require('./routes/organization');
 const whatsappRoutes = require('./routes/whatsapp');
+const gmailRoutes = require('./routes/gmail');
 app.use('/api/org', authenticate, organizationRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/gmail', gmailRoutes);
 
 // Start modular CRON jobs schedule
 const { startDailyAlertJob, startMonthlySummaryJob } = require('./jobs/alert.cron');
@@ -1176,7 +1652,10 @@ app.get('/*splat', (req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log('Stripe mode:', process.env.STRIPE_SECRET_KEY?.startsWith('sk_test') ? 'TEST' : 'LIVE');
+});
 
 // Export database primitives dynamically using getter functions (Fixes Circular Dependency!)
 module.exports = {
@@ -1184,5 +1663,6 @@ module.exports = {
   getDbType: () => dbType,
   inMemoryDB,
   saveLocalDB,
-  admin
+  admin,
+  authenticate
 };

@@ -228,7 +228,8 @@ router.get('/:orgId/gst-report', verifyOrgAccess, async (req, res) => {
     const pdfBuffer = await generateGSTReport(
       dashboard.org,
       dashboard.subscriptions,
-      period || 'This Month'
+      period || 'This Month',
+      req.user
     );
     
     res.setHeader('Content-Type', 'application/pdf');

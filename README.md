@@ -1,6 +1,6 @@
-# SubTrackr — Smart Subscription & Expense Tracker
+# Vaultly — Smart Subscription & Expense Tracker
 
-SubTrackr is a complete, production-ready web application to track subscriptions, get renewal alerts, and manage expenses.
+Vaultly is a complete, production-ready web application to track subscriptions, get renewal alerts, and manage expenses.
 
 ## Project Structure
 - \`frontend/\`: Angular 17+ application with Tailwind CSS and Chart.js
@@ -32,4 +32,4 @@ The frontend will run on \`http://localhost:4200\`. It connects automatically to
 - Expense Graveyard (Calculates wasted money)
 - Responsive Glassmorphism Design UI
 
-Enjoy SubTrackr!
+Enjoy Vaultly!

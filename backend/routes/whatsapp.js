@@ -19,7 +19,7 @@ const getDbCtx = () => {
 router.post('/webhook', express.urlencoded({ extended: false }), async (req, res) => {
   try {
     const twilioSignature = req.headers['x-twilio-signature'];
-    const baseUrl = process.env.BASE_URL || 'https://subtrackr.in';
+    const baseUrl = process.env.BASE_URL || 'https://vaultly.onrender.com';
     const requestUrl = `${baseUrl}/api/whatsapp/webhook`;
 
     const isMockToken = !process.env.TWILIO_AUTH_TOKEN || 

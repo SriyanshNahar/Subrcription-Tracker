@@ -149,11 +149,11 @@ const startDailyAlertJob = () => {
           // 2. Send SendGrid Email Alert (Always Send)
           const mailOptions = {
             to: user.email,
-            from: 'alerts@subtrackr.in',
+            from: 'alerts@vaultly.com',
             subject: `⏰ ${sub.name} renews in ${diffDays} day${diffDays > 1 ? 's' : ''}!`,
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #0A0A18; color: #FFFFFF;">
-                <h2 style="color: #6C63FF; text-align: center;">📊 SubTrackr Renewal Alert</h2>
+                <h2 style="color: #6C63FF; text-align: center;">📊 Vaultly Renewal Alert</h2>
                 <p style="font-size: 16px; color: #E5E7EB;">Hey ${user.name || 'there'}!</p>
                 <p style="font-size: 14px; color: #9CA3AF; line-height: 1.5;">
                   This is a quick reminder that your <strong>${sub.name}</strong> subscription is scheduled to renew in <strong>${diffDays} day${diffDays > 1 ? 's' : ''}</strong>.
@@ -164,12 +164,12 @@ const startDailyAlertJob = () => {
                   <p style="margin: 5px 0; color: #E5E7EB; font-size: 16px;">📅 Date: <strong>${renewalDate.toLocaleDateString('en-IN')}</strong></p>
                 </div>
                 <div style="text-align: center; margin-top: 30px;">
-                  <a href="https://subtrackr.in" style="background-color: #6C63FF; color: white; padding: 10px 24px; border-radius: 6px; font-weight: bold; text-decoration: none;">
+                  <a href="https://vaultly.onrender.com" style="background-color: #6C63FF; color: white; padding: 10px 24px; border-radius: 6px; font-weight: bold; text-decoration: none;">
                     Go to My Dashboard
                   </a>
                 </div>
                 <div style="border-top: 1px solid #1f2937; margin-top: 30px; padding-top: 15px; text-align: center; font-size: 11px; color: #6B7280;">
-                  SubTrackr SaaS — Never miss a renewal again.
+                  Vaultly SaaS — Never miss a renewal again.
                 </div>
               </div>
             `

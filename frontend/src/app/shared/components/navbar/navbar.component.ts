@@ -5,18 +5,19 @@ import { AuthService } from '../../../core/services/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { ToastrService } from 'ngx-toastr';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   template: `
     <nav class="fixed top-0 w-full z-50 bg-card bg-opacity-95 backdrop-blur-md border-b border-white/5 transition-all duration-300">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <!-- Brand Logo & Diagnostic Badge -->
           <div class="flex items-center space-x-3">
-            <a routerLink="/" (click)="isMobileMenuOpen = false; isProfileDropdownOpen = false" class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">SubTrackr</a>
+            <a routerLink="/" (click)="isMobileMenuOpen = false; isProfileDropdownOpen = false" class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity">Vaultly</a>
           </div>
 
           <!-- Desktop Navigation Options (Visible on large screens) -->
@@ -60,7 +61,7 @@ import { ToastrService } from 'ngx-toastr';
                   <!-- Display Name & Chevron -->
                   <div class="flex flex-col text-left">
                     <span class="nav-profile-name font-bold text-sm leading-tight inline-block max-w-[120px] truncate">{{ profile.name }}</span>
-                    <span class="nav-profile-plan text-[10px] font-semibold uppercase tracking-wider capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : (profile.plan === 'corporate' ? 'Corporate' : 'Free')) }}</span>
+                    <span class="nav-profile-plan text-[10px] font-semibold uppercase tracking-wider capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : (profile.plan === 'corporate' ? 'Corporate' : (profile.plan === 'student' ? 'Student' : 'Free'))) }}</span>
                   </div>
                   
                   <!-- Chevron icon -->
@@ -110,10 +111,11 @@ import { ToastrService } from 'ngx-toastr';
                           'text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent font-black': profile.plan === 'pro',
                           'text-emerald-400 font-black': profile.plan === 'family',
                           'text-teal-400 font-black': profile.plan === 'corporate',
+                          'text-indigo-400 font-black': profile.plan === 'student',
                           'text-gray-300 font-bold': profile.plan === 'free' || !profile.plan
                         }"
                         class="text-xs capitalize">
-                        {{ profile.plan === 'pro' ? 'Premium Pro' : (profile.plan === 'family' ? 'Shared Family' : (profile.plan === 'corporate' ? 'Corporate Plan' : 'Starter Free')) }}
+                        {{ profile.plan === 'pro' ? 'Premium Pro' : (profile.plan === 'family' ? 'Shared Family' : (profile.plan === 'corporate' ? 'Corporate Plan' : (profile.plan === 'student' ? 'Student Saver' : 'Starter Free'))) }}
                       </span>
                     </div>
                     
@@ -124,10 +126,11 @@ import { ToastrService } from 'ngx-toastr';
                         'bg-slate-500/10 text-slate-400 border border-slate-500/30 hover:bg-slate-500/20': profile.plan === 'free' || !profile.plan,
                         'bg-gradient-to-r from-primary to-accent text-white shadow shadow-primary/20 hover:opacity-90': profile.plan === 'pro',
                         'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20': profile.plan === 'family',
-                        'bg-teal-500/10 text-teal-400 border border-teal-500/30 hover:bg-teal-500/20': profile.plan === 'corporate'
+                        'bg-teal-500/10 text-teal-400 border border-teal-500/30 hover:bg-teal-500/20': profile.plan === 'corporate',
+                        'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/20': profile.plan === 'student'
                       }"
                       class="text-[9px] font-black px-2 py-0.5 rounded-md tracking-wider transition-all duration-300 transform active:scale-95 cursor-pointer">
-                      {{ profile.plan === 'pro' ? 'PRO' : (profile.plan === 'family' ? 'FAMILY' : (profile.plan === 'corporate' ? 'CORP' : 'FREE')) }}
+                      {{ profile.plan === 'pro' ? 'PRO' : (profile.plan === 'family' ? 'FAMILY' : (profile.plan === 'corporate' ? 'CORP' : (profile.plan === 'student' ? 'STUDENT' : 'FREE'))) }}
                     </button>
                   </div>
 
@@ -141,6 +144,17 @@ import { ToastrService } from 'ngx-toastr';
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                       </svg>
                       <span>My Plan Benefits</span>
+                    </button>
+
+                    <!-- Trigger Account Settings Modal -->
+                    <button 
+                      (click)="isProfileDropdownOpen = false; openSettingsModal($event)" 
+                      class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/5 transition-all text-xs font-semibold text-left">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span>Account Settings</span>
                     </button>
 
                     <!-- Upgrade Pricing Store -->
@@ -239,7 +253,7 @@ import { ToastrService } from 'ngx-toastr';
             <!-- Two-line info block -->
             <div class="flex flex-col text-left flex-grow">
               <span class="text-white font-bold text-sm leading-tight">{{ profile.name }}</span>
-              <span class="text-gray-400 text-xs font-semibold capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : 'Free') }}</span>
+              <span class="text-gray-400 text-xs font-semibold capitalize">{{ profile.plan === 'pro' ? 'Pro' : (profile.plan === 'family' ? 'Family' : (profile.plan === 'corporate' ? 'Corporate' : (profile.plan === 'student' ? 'Student' : 'Free'))) }}</span>
             </div>
             
             <!-- Mobile badge details button -->
@@ -248,10 +262,12 @@ import { ToastrService } from 'ngx-toastr';
               [ngClass]="{
                 'bg-slate-500/10 text-slate-400 border border-slate-500/30': profile.plan === 'free' || !profile.plan,
                 'bg-gradient-to-r from-primary to-accent text-white shadow shadow-primary/20': profile.plan === 'pro',
-                'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30': profile.plan === 'family'
+                'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30': profile.plan === 'family',
+                'bg-teal-500/10 text-teal-400 border border-teal-500/30 hover:bg-teal-500/20': profile.plan === 'corporate',
+                'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/20': profile.plan === 'student'
               }"
               class="text-[9px] font-black px-2 py-0.5 rounded-md tracking-wider cursor-pointer">
-              {{ profile.plan === 'pro' ? 'PRO' : (profile.plan === 'family' ? 'FAMILY' : 'FREE') }}
+              {{ profile.plan === 'pro' ? 'PRO' : (profile.plan === 'family' ? 'FAMILY' : (profile.plan === 'corporate' ? 'CORP' : (profile.plan === 'student' ? 'STUDENT' : 'FREE'))) }}
             </button>
           </div>
 
@@ -272,6 +288,17 @@ import { ToastrService } from 'ngx-toastr';
           <a *ngIf="profile.plan === 'pro' || profile.plan === 'family' || profile.plan === 'corporate'" routerLink="/whatsapp-alerts" (click)="isMobileMenuOpen = false" routerLinkActive="text-emerald-400 font-bold" class="text-gray-300 hover:text-emerald-400 text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all flex items-center">
             <span>💬 WhatsApp Alerts</span>
           </a>
+
+          <!-- Account Settings Mobile button -->
+          <button 
+            (click)="isMobileMenuOpen = false; openSettingsModal($event)" 
+            class="w-full text-left text-gray-300 hover:text-white text-sm py-2 px-3 hover:bg-white/5 rounded-xl transition-all flex items-center space-x-2 bg-transparent border-0 font-medium cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>Account Settings</span>
+          </button>
           
           <div class="h-px bg-white/5 my-2"></div>
           
@@ -331,6 +358,7 @@ import { ToastrService } from 'ngx-toastr';
                 'from-primary to-accent': profile.plan === 'pro',
                 'from-emerald-500 to-teal-500': profile.plan === 'family',
                 'from-teal-500 to-cyan-500': profile.plan === 'corporate',
+                'from-indigo-500 to-violet-500': profile.plan === 'student',
                 'from-gray-500 to-slate-600': profile.plan === 'free' || !profile.plan
               }"
               class="absolute inset-0 bg-gradient-to-r opacity-15 blur-xl"></div>
@@ -341,13 +369,14 @@ import { ToastrService } from 'ngx-toastr';
                 'text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent': profile.plan === 'pro',
                 'text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400': profile.plan === 'family',
                 'text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400': profile.plan === 'corporate',
+                'text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400': profile.plan === 'student',
                 'text-gray-300': profile.plan === 'free' || !profile.plan
               }"
               class="text-3xl font-black">
-              {{ profile.plan === 'pro' ? 'Premium Pro' : (profile.plan === 'family' ? 'Shared Family' : (profile.plan === 'corporate' ? 'Corporate Plan' : 'Starter Free')) }}
+              {{ profile.plan === 'pro' ? 'Premium Pro' : (profile.plan === 'family' ? 'Shared Family' : (profile.plan === 'corporate' ? 'Corporate Plan' : (profile.plan === 'student' ? 'Student Saver' : 'Starter Free'))) }}
             </h4>
             <div class="mt-2 text-sm text-gray-400 font-medium">
-              {{ profile.plan === 'pro' ? '₹99 / month' : (profile.plan === 'family' ? '₹199 / month' : (profile.plan === 'corporate' ? '₹999 / month' : '₹0 / forever')) }}
+              {{ profile.plan === 'pro' ? '₹299 / month' : (profile.plan === 'family' ? '₹549 / month' : (profile.plan === 'corporate' ? '₹1499 / month' : (profile.plan === 'student' ? '₹49 / month' : '₹0 / forever'))) }}
             </div>
           </div>
 
@@ -402,6 +431,46 @@ import { ToastrService } from 'ngx-toastr';
               </li>
             </ng-container>
 
+            <!-- Student Plan details -->
+            <ng-container *ngIf="profile.plan === 'student'">
+              <li class="flex items-start space-x-2.5">
+                <span class="text-indigo-400 font-bold text-base leading-none">✓</span>
+                <span>Track up to <strong>6 subscriptions</strong></span>
+              </li>
+              <li class="flex items-start space-x-2.5">
+                <span class="text-indigo-400 font-bold text-base leading-none">✓</span>
+                <span>Custom email renewal alerts</span>
+              </li>
+              <li class="flex items-start space-x-2.5">
+                <span class="text-indigo-400 font-bold text-base leading-none">✓</span>
+                <span>Full shareable Expense Graveyard card</span>
+              </li>
+              <li class="flex items-start space-x-2.5">
+                <span class="text-indigo-400 font-bold text-base leading-none">✓</span>
+                <span>Cancel Assistant tools</span>
+              </li>
+            </ng-container>
+
+            <!-- Corporate Plan details -->
+            <ng-container *ngIf="profile.plan === 'corporate'">
+              <li class="flex items-start space-x-2.5">
+                <span class="text-teal-400 font-bold text-base leading-none">✓</span>
+                <span><strong>Unlimited</strong> subscriptions tracked</span>
+              </li>
+              <li class="flex items-start space-x-2.5">
+                <span class="text-teal-400 font-bold text-base leading-none">✓</span>
+                <span>Up to <strong>50 team members</strong></span>
+              </li>
+              <li class="flex items-start space-x-2.5">
+                <span class="text-teal-400 font-bold text-base leading-none">✓</span>
+                <span>GST-ready invoice export (PDF)</span>
+              </li>
+              <li class="flex items-start space-x-2.5">
+                <span class="text-teal-400 font-bold text-base leading-none">✓</span>
+                <span>Employee SaaS seat auditing</span>
+              </li>
+            </ng-container>
+
             <!-- Family Plan details -->
             <ng-container *ngIf="profile.plan === 'family'">
               <li class="flex items-start space-x-2.5">
@@ -439,7 +508,7 @@ import { ToastrService } from 'ngx-toastr';
 
           <!-- Active premium info -->
           <div 
-            *ngIf="profile.plan === 'pro' || profile.plan === 'family'" 
+            *ngIf="profile.plan === 'pro' || profile.plan === 'family' || profile.plan === 'corporate' || profile.plan === 'student'" 
             class="mt-4 flex items-center justify-between text-xs text-gray-400 bg-white/5 border border-white/5 px-4 py-3 rounded-xl">
             <span class="flex items-center space-x-1"><span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span><span>Plan Status: <strong class="text-emerald-400">Active</strong></span></span>
             <span>Billing: <strong class="text-white">Auto-renew</strong></span>
@@ -556,6 +625,107 @@ import { ToastrService } from 'ngx-toastr';
         </div>
       </div>
     </div>
+
+    <!-- Account Settings Modal -->
+    <div 
+      *ngIf="showSettingsModal" 
+      class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in"
+      (click)="showSettingsModal = false">
+      
+      <div 
+        class="glass-card max-w-md w-full border border-white/10 p-6 shadow-2xl relative overflow-hidden text-white bg-[#0A0A18]"
+        (click)="$event.stopPropagation()">
+        
+        <!-- Glows -->
+        <div class="absolute -top-24 -left-24 w-48 h-48 bg-primary/20 rounded-full blur-[80px] pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-accent/20 rounded-full blur-[80px] pointer-events-none"></div>
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-5 pb-3.5 border-b border-white/5">
+          <div class="flex items-center space-x-2">
+            <span class="text-xl">⚙️</span>
+            <h3 class="text-xl font-bold tracking-tight text-white">Account Settings</h3>
+          </div>
+          <button (click)="showSettingsModal = false" class="text-gray-400 hover:text-white transition-colors cursor-pointer p-1 rounded-lg hover:bg-white/5 border-0 bg-transparent">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form (ngSubmit)="saveSettings()" class="space-y-4 text-left">
+          <!-- Name Field -->
+          <div>
+            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">Profile Name</label>
+            <input 
+              [(ngModel)]="settingsName" 
+              name="settingsName" 
+              type="text" 
+              required
+              class="w-full bg-[#090915] border border-gray-700/60 rounded-xl px-4 py-3 focus:outline-none focus:border-primary text-white text-sm">
+          </div>
+
+          <!-- Currency Selector -->
+          <div>
+            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">Preferred Currency</label>
+            <select 
+              [(ngModel)]="settingsCurrency" 
+              name="settingsCurrency"
+              class="w-full bg-[#090915] border border-gray-700/60 rounded-xl px-4 py-3 focus:outline-none focus:border-primary text-white text-sm cursor-pointer">
+              <option value="INR">🇮🇳 INR (₹)</option>
+              <option value="USD">🇺🇸 USD ($)</option>
+              <option value="EUR">🇪🇺 EUR (€)</option>
+              <option value="GBP">🇬🇧 GBP (£)</option>
+              <option value="AUD">🇦🇺 AUD (A$)</option>
+              <option value="CAD">🇨🇦 CAD (C$)</option>
+              <option value="SGD">🇸🇬 SGD (S$)</option>
+              <option value="AED">🇦🇪 AED (د.إ)</option>
+              <option value="JPY">🇯🇵 JPY (¥)</option>
+              <option value="CHF">🇨🇭 CHF (Fr)</option>
+              <option value="SEK">🇸🇪 SEK (kr)</option>
+              <option value="NOK">🇳🇴 NOK (kr)</option>
+              <option value="DKK">🇩🇰 DKK (kr)</option>
+              <option value="NZD">🇳🇿 NZD (NZ$)</option>
+              <option value="BRL">🇧🇷 BRL (R$)</option>
+            </select>
+          </div>
+
+          <!-- Country Selector -->
+          <div>
+            <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">Your Country</label>
+            <select 
+              [(ngModel)]="settingsCountry" 
+              name="settingsCountry"
+              class="w-full bg-[#090915] border border-gray-700/60 rounded-xl px-4 py-3 focus:outline-none focus:border-primary text-white text-sm cursor-pointer">
+              <option value="IN">🇮🇳 India</option>
+              <option value="US">🇺🇸 United States</option>
+              <option value="GB">🇬🇧 United Kingdom</option>
+              <option value="DE">🇩🇪 Germany</option>
+              <option value="FR">🇫🇷 France</option>
+              <option value="AU">🇦🇺 Australia</option>
+              <option value="CA">🇨🇦 Canada</option>
+              <option value="SG">🇸🇬 Singapore</option>
+              <option value="AE">🇦🇪 United Arab Emirates</option>
+              <option value="JP">🇯🇵 Japan</option>
+              <option value="CH">🇨🇭 Switzerland</option>
+              <option value="SE">🇸🇪 Sweden</option>
+              <option value="NO">🇳🇴 Norway</option>
+              <option value="DK">🇩🇰 Denmark</option>
+              <option value="NZ">🇳🇿 New Zealand</option>
+              <option value="BR">🇧🇷 Brazil</option>
+            </select>
+          </div>
+
+          <button 
+            type="submit" 
+            [disabled]="isSavingSettings"
+            class="w-full mt-4 bg-gradient-to-r from-primary to-accent hover:opacity-95 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg active:scale-95 cursor-pointer flex items-center justify-center space-x-2">
+            <span *ngIf="isSavingSettings" class="animate-spin mr-1">🔄</span>
+            <span>Save Settings Changes</span>
+          </button>
+        </form>
+      </div>
+    </div>
   `
 })
 export class NavbarComponent implements OnInit {
@@ -567,6 +737,13 @@ export class NavbarComponent implements OnInit {
   showFixModal = false;
   isUploadingPhoto = false;
 
+  // Regional settings state variables
+  showSettingsModal = false;
+  isSavingSettings = false;
+  settingsName = '';
+  settingsCurrency = 'INR';
+  settingsCountry = 'IN';
+
   constructor(
     public auth: AuthService,
     private router: Router,
@@ -576,8 +753,17 @@ export class NavbarComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.activeTheme = localStorage.getItem('subtrackr_theme') || 'theme-light';
+    this.activeTheme = localStorage.getItem('vaultly_theme') || 'theme-light';
     this.checkDatabaseStatus();
+
+    // Subscribe to auth user profile changes to keep settings in sync
+    this.auth.userProfile$.subscribe(profile => {
+      if (profile) {
+        this.settingsName = profile.name || '';
+        this.settingsCurrency = profile.currency || 'INR';
+        this.settingsCountry = profile.country || 'IN';
+      }
+    });
   }
 
   checkDatabaseStatus() {
@@ -602,7 +788,7 @@ export class NavbarComponent implements OnInit {
   onThemeChange(event: any) {
     const theme = event.target.value;
     this.activeTheme = theme;
-    localStorage.setItem('subtrackr_theme', theme);
+    localStorage.setItem('vaultly_theme', theme);
     this.applyTheme(theme);
   }
 
@@ -697,6 +883,38 @@ export class NavbarComponent implements OnInit {
   logout() {
     this.auth.logout();
     this.router.navigate(['/login']);
+  }
+
+  openSettingsModal(event: Event) {
+    event.stopPropagation();
+    event.preventDefault();
+    this.showSettingsModal = true;
+    const profile = this.auth.userProfile$.value;
+    if (profile) {
+      this.settingsName = profile.name || '';
+      this.settingsCurrency = profile.currency || 'INR';
+      this.settingsCountry = profile.country || 'IN';
+    }
+  }
+
+  saveSettings() {
+    this.isSavingSettings = true;
+    this.auth.updateUserProfile({
+      name: this.settingsName,
+      currency: this.settingsCurrency,
+      country: this.settingsCountry
+    }).subscribe({
+      next: () => {
+        this.toastr.success('Account settings updated successfully!', 'Settings Saved');
+        this.showSettingsModal = false;
+        this.isSavingSettings = false;
+      },
+      error: (err) => {
+        console.error('Failed to update settings:', err);
+        this.toastr.error('Failed to save settings changes.');
+        this.isSavingSettings = false;
+      }
+    });
   }
 
   getInitials(name: string): string {
